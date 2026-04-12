@@ -703,9 +703,8 @@ async function api(action, body={}) {
       if(seen.has(no)) return {ok:false, error:'管理番号が重複: '+no};
       seen.add(no);
     }
-    // 全削除 → 全挿入
-    const {error:delErr} = await sb.from('employees').delete().neq('id',0);
-    if(delErr) throw new Error(delErr.message);
+    // upsert（mgmt_noで既存ならupdate、なければinsert）
+    const newMgmtNos = new Set(emps.map(e=>e.mgmtNo));
     if(emps.length){
       const rows = emps.map((e,i)=>({
         mgmt_no:e.mgmtNo, name:e.name, name_kana:e.kana||null, employee_no:e.empNo||null,
@@ -713,8 +712,18 @@ async function api(action, body={}) {
         hire_date:e.hireDate||null, retire_date:e.retireDate||null,
         employment_type:e.empType||'アルバイト',
       }));
-      const {error:insErr} = await sb.from('employees').insert(rows);
-      if(insErr) throw new Error(insErr.message);
+      const {error:upsErr} = await sb.from('employees').upsert(rows, {onConflict:'mgmt_no'});
+      if(upsErr) throw new Error(upsErr.message);
+    }
+    // 画面から消された従業員を削除（打刻記録がある場合は無効化のみ）
+    const {data:existing} = await sb.from('employees').select('mgmt_no');
+    const toDelete = (existing||[]).filter(r=>!newMgmtNos.has(r.mgmt_no)).map(r=>r.mgmt_no);
+    for(const mno of toDelete){
+      const {error:dErr} = await sb.from('employees').delete().eq('mgmt_no',mno);
+      if(dErr){
+        // FK制約エラー → 打刻記録があるので無効化（論理削除）
+        await sb.from('employees').update({is_active:false}).eq('mgmt_no',mno);
+      }
     }
     return {ok:true};
   }
