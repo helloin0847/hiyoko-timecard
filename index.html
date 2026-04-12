@@ -717,12 +717,15 @@ async function api(action, body={}) {
     }
     // 画面から消された従業員を削除（打刻記録がある場合は無効化のみ）
     const {data:existing} = await sb.from('employees').select('mgmt_no');
-    const toDelete = (existing||[]).filter(r=>!newMgmtNos.has(r.mgmt_no)).map(r=>r.mgmt_no);
-    for(const mno of toDelete){
-      const {error:dErr} = await sb.from('employees').delete().eq('mgmt_no',mno);
-      if(dErr){
-        // FK制約エラー → 打刻記録があるので無効化（論理削除）
+    const toRemove = (existing||[]).filter(r=>!newMgmtNos.has(r.mgmt_no)).map(r=>r.mgmt_no);
+    for(const mno of toRemove){
+      // 打刻記録があるかチェック
+      const {data:refs} = await sb.from('time_records').select('id').eq('mgmt_no',mno).limit(1);
+      if(refs && refs.length > 0){
+        // 打刻記録があるので削除不可 → 無効化
         await sb.from('employees').update({is_active:false}).eq('mgmt_no',mno);
+      } else {
+        await sb.from('employees').delete().eq('mgmt_no',mno);
       }
     }
     return {ok:true};
