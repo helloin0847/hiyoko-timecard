@@ -1659,11 +1659,17 @@ async function loadHistory(){
 }
 
 // ---- 従業員マスタ管理 ----
-function renderMaster(){
-  api('getEmployees').then(d=>{
+async function renderMaster(){
+  showLoading();
+  try{
+    const d = await api('getEmployees');
     empRows=(d.employees||[]);
     renderEmpList();
-  }).catch(()=>{ empRows=[...employees]; renderEmpList(); });
+  }catch(e){
+    empRows=[...employees];
+    renderEmpList();
+    toast('従業員データ取得失敗: '+e.message, 'err');
+  }finally{ hideLoading(); }
 }
 
 function renderEmpList(){
