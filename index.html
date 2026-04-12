@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>kitchen ひよこ タイムカード</title>
+<style>
+:root {
+  --bg:#F7F7F5; --sur:#FFFFFF; --bd:rgba(0,0,0,0.09); --bd2:rgba(0,0,0,0.16);
+  --tx:#1A1A18; --mu:#6B6B68; --hi:#9E9E9B;
+  --g50:#EAF3DE; --g60:#3B6D11; --g80:#27500A;
+  --a50:#FAEEDA; --a60:#BA7517; --a80:#633806;
+  --b50:#E6F1FB; --b60:#185FA5; --b80:#0C447C;
+  --r50:#FCEBEB; --r60:#A32D2D; --r80:#791F1F;
+  --p50:#EEEDFE; --p60:#534AB7; --p80:#3C3489;
+  --c50:#FAECE7; --c60:#993C1D; --c80:#712B13;
+  --rad:10px; --rad-s:7px;
+  --font:-apple-system,'Hiragino Sans','Yu Gothic UI',sans-serif;
+}
+/* ダークモード無効化 — 常にライトモード */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--tx);}
+button{font-family:var(--font);cursor:pointer;}
+
+/* ===== 店舗選択画面 ===== */
+#storeScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;}
+.store-sel-logo{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#2A1F1A,#3D2E23,#2A1F1A);
+  border:2px solid #8B7355;outline:2px solid #2A1F1A;outline-offset:2px;
+  border-radius:8px;padding:18px 36px 14px;position:relative;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.08);
+  min-width:260px;
+}
+.store-sel-logo::before,.store-sel-logo::after{
+  content:'';position:absolute;width:18px;height:18px;
+  border:1.5px solid #8B7355;border-radius:50%;opacity:.5;
+}
+.store-sel-logo::before{top:8px;left:8px;}
+.store-sel-logo::after{top:8px;right:8px;}
+.logo-top{font-size:13px;letter-spacing:4px;color:#D4C5A9;font-weight:500;}
+.logo-kitchen{font-size:9px;letter-spacing:6px;color:#A09080;margin:2px 0 4px;text-transform:uppercase;}
+.logo-main{display:flex;align-items:center;gap:8px;}
+.logo-hiyoko{font-size:36px;font-weight:900;color:#E8C44A;
+  font-family:'Yu Mincho','Hiragino Mincho ProN',serif;
+  text-shadow:1px 1px 2px rgba(0,0,0,0.4);letter-spacing:2px;
+}
+.logo-chick{width:36px;height:36px;}
+.logo-chick-body{fill:#E8C44A;}
+.logo-chick-beak{fill:#E07830;}
+.logo-chick-eye{fill:#2A1F1A;}
+.store-sel-title{font-size:20px;font-weight:700;}
+.store-sel-sub{font-size:13px;color:var(--mu);}
+.store-sel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:400px;}
+.store-sel-btn{
+  padding:20px 12px;text-align:center;border-radius:var(--rad);
+  border:0.5px solid var(--bd2);background:var(--sur);cursor:pointer;
+  transition:all .12s;
+}
+.store-sel-btn:hover{background:var(--b50);border-color:var(--b60);}
+.store-sel-btn .name{font-size:16px;font-weight:700;color:var(--tx);}
+.store-sel-btn .sub{font-size:11px;color:var(--mu);margin-top:3px;}
+.store-sel-note{font-size:12px;color:var(--hi);text-align:center;max-width:340px;line-height:1.7;}
+.store-sel-note code{font-family:monospace;background:var(--bd);padding:1px 5px;border-radius:4px;font-size:11px;}
+
+/* ===== メイン画面 ===== */
+#mainScreen{display:none;}
+.app{max-width:1000px;margin:0 auto;padding:0 14px 60px;}
+
+.header{display:flex;align-items:center;gap:10px;padding:12px 0 10px;border-bottom:0.5px solid var(--bd);margin-bottom:12px;}
+.hdr-logo{width:34px;height:34px;border-radius:50%;background:#FAC775;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.hdr-title{font-size:15px;font-weight:700;}
+.hdr-store{font-size:11px;font-weight:600;padding:2px 9px;border-radius:100px;margin-top:2px;display:inline-block;}
+.s0{background:var(--b50);color:var(--b80);}
+.s1{background:var(--p50);color:var(--p80);}
+.s2{background:var(--c50);color:var(--c80);}
+.hdr-right{margin-left:auto;text-align:right;}
+.hdr-clock{font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.5px;}
+.store-change-btn{font-size:11px;color:var(--mu);background:transparent;border:0.5px solid var(--bd2);border-radius:var(--rad-s);padding:3px 8px;margin-top:3px;}
+
+.tabs{display:flex;gap:3px;background:rgba(0,0,0,0.06);border-radius:var(--rad-s);padding:3px;margin-bottom:14px;}
+@media(prefers-color-scheme:dark){.tabs{background:rgba(255,255,255,0.06);}}
+@media(max-width:1200px){#tab-summary,#tab-log,#tab-monthly,#tab-history,#tab-setting{display:none !important;}}
+.tab{flex:1;padding:7px 4px;font-size:12px;font-weight:500;text-align:center;border-radius:5px;border:none;background:transparent;color:var(--mu);}
+.tab.on{background:var(--sur);color:var(--tx);box-shadow:0 0 0 0.5px var(--bd2);}
+
+.card{background:var(--sur);border:0.5px solid var(--bd);border-radius:var(--rad);padding:13px 15px;margin-bottom:10px;}
+.card-lbl{font-size:11px;font-weight:600;color:var(--mu);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;}
+
+/* ===== 打刻 ===== */
+.store-filter-row{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap;}
+.sf-btn{padding:7px 14px;font-size:13px;font-weight:600;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--mu);transition:all .12s;cursor:pointer;}
+.sf-btn.sf-on-0{background:var(--b50);border-color:var(--b60);color:var(--b80);}
+.sf-btn.sf-on-1{background:var(--p50);border-color:var(--p60);color:var(--p80);}
+.sf-btn.sf-on-2{background:var(--c50);border-color:var(--c60);color:var(--c80);}
+.sf-btn.sf-all{background:var(--bg);color:var(--mu);}
+.sf-btn.sf-all.sf-on-all{background:var(--bg);border-color:var(--tx);color:var(--tx);}
+.kana-row{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
+.kana-btn{padding:7px 12px;font-size:13px;font-weight:600;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);transition:all .12s;}
+.kana-btn.on{background:var(--b50);border-color:var(--b60);color:var(--b80);}
+.kana-btn.all{background:var(--bg);color:var(--mu);}
+
+.emp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:7px;}
+
+.emp-tile{border-radius:var(--rad);border:0.5px solid var(--bd);background:var(--sur);padding:10px 10px 8px;}
+.emp-tile.t-eigyo{border-color:var(--g60);background:var(--g50);}
+.emp-tile.t-shikomi{border-color:var(--a60);background:var(--a50);}
+.emp-name{font-size:13px;font-weight:600;padding-bottom:6px;border-bottom:0.5px solid var(--bd);margin-bottom:6px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.emp-tile.t-eigyo .emp-name{color:var(--g80);border-color:rgba(59,109,17,.25);}
+.emp-tile.t-shikomi .emp-name{color:var(--a80);border-color:rgba(186,117,23,.25);}
+.emp-tile.t-tooshi{border-color:var(--b60);background:var(--b50);}
+.emp-tile.t-tooshi .emp-name{color:var(--b80);border-color:rgba(24,95,165,.25);}
+.status-pill{font-size:10px;font-weight:600;padding:1px 6px;border-radius:100px;display:inline-block;margin-bottom:4px;}
+.sp-e{background:var(--g50);color:var(--g60);}
+.sp-s{background:var(--a50);color:var(--a60);}
+.sp-t{background:var(--b50);color:var(--b60);}
+.sp-blank{height:18px;margin-bottom:4px;}
+.punch-single{width:100%;padding:9px 4px;font-size:12px;font-weight:700;text-align:center;border-radius:var(--rad-s);border:0.5px solid;line-height:1.3;}
+.ps-shikomi-in{border-color:var(--a60);background:var(--a50);color:var(--a80);}
+.ps-shikomi-out{border-color:var(--r60);background:var(--r50);color:var(--r80);}
+.ps-eigyo-in{border-color:var(--g60);background:var(--g50);color:var(--g80);}
+.ps-eigyo-out{border-color:var(--r60);background:var(--r50);color:var(--r80);}
+.ps-tooshi-in{border-color:var(--b60);background:var(--b50);color:var(--b80);}
+.ps-tooshi-out{border-color:var(--r60);background:var(--r50);color:var(--r80);}
+
+/* ===== 集計 ===== */
+.metric-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;}
+.metric{border-radius:var(--rad);padding:14px 14px 12px;border:0.5px solid var(--bd);overflow:hidden;}
+.metric-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.metric-lbl{font-size:12px;font-weight:700;}
+.metric-icon{font-size:16px;}
+.metric-val{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:6px;}
+.metric-detail{display:flex;gap:8px;font-size:11px;font-weight:600;}
+.metric-detail span{padding:2px 8px;border-radius:100px;}
+.m0{background:var(--b50);} .m0 .metric-lbl{color:var(--b80);} .m0 .metric-val{color:var(--b80);}
+.m0 .md-s{background:var(--a50);color:var(--a80);} .m0 .md-e{background:var(--g50);color:var(--g80);}
+.m1{background:var(--p50);} .m1 .metric-lbl{color:var(--p80);} .m1 .metric-val{color:var(--p80);}
+.m1 .md-s{background:var(--a50);color:var(--a80);} .m1 .md-e{background:var(--g50);color:var(--g80);}
+.m2{background:var(--c50);} .m2 .metric-lbl{color:var(--c80);} .m2 .metric-val{color:var(--c80);}
+.m2 .md-s{background:var(--a50);color:var(--a80);} .m2 .md-e{background:var(--g50);color:var(--g80);}
+.total-bar{display:flex;justify-content:space-between;align-items:center;background:var(--sur);border:0.5px solid var(--bd);border-radius:var(--rad);padding:14px 16px;}
+.total-lbl{font-size:14px;color:var(--mu);font-weight:700;}
+.total-val{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--tx);}
+
+/* ===== テーブル共通 ===== */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;padding:6px 8px;color:var(--mu);font-weight:600;border-bottom:0.5px solid var(--bd);white-space:nowrap;}
+td{padding:8px 8px;border-bottom:0.5px solid var(--bd);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;}
+.b-shikomi{background:var(--a50);color:var(--a80);}
+.b-eigyo{background:var(--g50);color:var(--g80);}
+.b-tooshi{background:var(--b50);color:var(--b80);}
+.b-s0{background:var(--b50);color:var(--b80);}
+.b-s1{background:var(--p50);color:var(--p80);}
+.b-s2{background:var(--c50);color:var(--c80);}
+.b-open{background:var(--g50);color:var(--g80);}
+.b-fixed{background:var(--r50);color:var(--r80);}
+
+td.td-time{white-space:nowrap;}
+@media(min-width:600px){table{font-size:13px;}}
+
+/* ===== フィルタ行 ===== */
+.filter-row{display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap;align-items:center;}
+.filter-row input,.filter-row select{font-size:13px;padding:7px 10px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
+.icon-btn{padding:7px 14px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:transparent;color:var(--tx);font-size:12px;font-weight:600;}
+
+/* ===== 月次CSV ===== */
+.period-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.period-row label{font-size:12px;color:var(--mu);}
+.period-row input{font-size:13px;padding:7px 10px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
+.dl-btn{padding:12px 28px;border-radius:var(--rad-s);border:none;background:var(--b50);color:var(--b80);font-size:14px;font-weight:700;}
+.fm-fields{font-size:12px;color:var(--mu);line-height:2;font-family:monospace;background:var(--bg);border-radius:var(--rad-s);padding:10px 13px;}
+.fm-fn{color:var(--tx);font-weight:600;}
+
+/* ===== 設定・従業員マスタ ===== */
+.emp-mgr-row{display:flex;align-items:center;gap:7px;padding:9px 12px;border:0.5px solid var(--bd);border-radius:var(--rad-s);margin-bottom:5px;}
+.mgmt-no-badge{font-size:11px;color:var(--hi);background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace;flex-shrink:0;min-width:44px;text-align:center;}
+.emp-mgr-row .nm{flex:1;font-size:13px;padding:5px 8px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
+.emp-mgr-row .kana-inp{width:90px;flex:none;font-size:12px;padding:5px 7px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
+.emp-mgr-row .empno-inp{width:70px;flex:none;font-size:12px;padding:5px 7px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);font-variant-numeric:tabular-nums;}
+.emp-mgr-row .store-sel{width:80px;flex:none;font-size:12px;padding:5px 7px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
+.emp-mgr-row .emptype-sel{width:80px;flex:none;font-size:12px;padding:5px 7px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
+.emp-mgr-row .date-inp{width:120px;flex:none;font-size:11px;padding:5px 5px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
+.emp-mgr-row .date-inp.retired-set{background:var(--r50);border-color:var(--r60);}
+.del-btn{padding:4px 10px;font-size:12px;border-radius:var(--rad-s);border:0.5px solid var(--r60);background:transparent;color:var(--r80);font-weight:600;}
+.add-btn{padding:9px 16px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:transparent;color:var(--tx);font-size:13px;font-weight:600;}
+.save-btn{padding:9px 20px;border-radius:var(--rad-s);border:none;background:var(--b50);color:var(--b80);font-size:13px;font-weight:700;}
+.mgr-header{display:flex;align-items:center;gap:7px;padding:0 12px 6px;font-size:11px;font-weight:600;color:var(--mu);}
+
+/* ===== 修正モーダル ===== */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.on{display:flex;}
+.modal{background:var(--sur);border-radius:var(--rad);padding:20px;width:min(340px,90vw);border:0.5px solid var(--bd2);}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:12px;}
+.modal label{font-size:12px;color:var(--mu);display:block;margin-bottom:4px;margin-top:10px;}
+.modal input{width:100%;font-size:13px;padding:8px 10px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--bg);color:var(--tx);font-family:var(--font);}
+.modal-actions{display:flex;gap:7px;margin-top:14px;justify-content:flex-end;}
+.m-cancel{padding:8px 15px;font-size:13px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:transparent;color:var(--tx);}
+.m-ok{padding:8px 18px;font-size:13px;border-radius:var(--rad-s);border:none;background:var(--b50);color:var(--b80);font-weight:700;}
+.m-del{padding:8px 18px;font-size:13px;border-radius:var(--rad-s);border:none;background:var(--r50);color:var(--r80);font-weight:700;}
+
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--sur);border:0.5px solid var(--bd2);border-radius:var(--rad);padding:10px 20px;font-size:13px;font-weight:600;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none;z-index:300;}
+.toast.on{opacity:1;}
+.toast.t-ok{border-left:3px solid var(--g60);}
+.toast.t-err{border-left:3px solid var(--r60);background:var(--r50);}
+.toast.t-info{border-left:3px solid var(--b60);}
+
+/* ===== ローディングオーバーレイ ===== */
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.22);z-index:250;display:none;align-items:center;justify-content:center;}
+.loading-overlay.on{display:flex;}
+.spinner{width:36px;height:36px;border:3px solid var(--bd);border-top-color:var(--b60);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===== 打刻ボタン無効化 ===== */
+.punch-disabled{pointer-events:none;opacity:0.5;}
+.empty{text-align:center;padding:2rem;color:var(--mu);font-size:13px;}
+.note{background:var(--bg);border-radius:var(--rad-s);padding:9px 12px;font-size:12px;color:var(--mu);line-height:1.7;margin-top:8px;}
+.note strong{color:var(--tx);}
+
+/* ===== 出勤状況パネル ===== */
+.attend-panel{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+.store-card{background:var(--sur);border-radius:var(--rad);border:0.5px solid var(--bd);overflow:hidden;}
+.store-card-head{padding:8px 11px;border-bottom:0.5px solid var(--bd);display:flex;align-items:center;justify-content:space-between;}
+.sch0{background:var(--b50);} .sch1{background:var(--p50);} .sch2{background:var(--c50);}
+.store-card-name{font-size:13px;font-weight:700;}
+.sch0 .store-card-name{color:var(--b80);} .sch1 .store-card-name{color:var(--p80);} .sch2 .store-card-name{color:var(--c80);}
+.store-card-cnt{font-size:11px;font-weight:600;}
+.sch0 .store-card-cnt{color:var(--b60);} .sch1 .store-card-cnt{color:var(--p60);} .sch2 .store-card-cnt{color:var(--c60);}
+.sch-seisha .store-card-name{color:var(--b80);} .sch-seisha .store-card-cnt{color:var(--b60);}
+.store-card-body{padding:7px 11px 8px;}
+.emp-attend-line{display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:0.5px solid var(--bd);font-size:12px;}
+.emp-attend-line:last-child{border-bottom:none;}
+.eal-name{font-weight:600;color:var(--tx);flex:1;}
+.eal-time{font-size:10px;color:var(--hi);}
+.kp{font-size:9px;font-weight:600;padding:1px 5px;border-radius:100px;}
+.kp-s{background:var(--a50);color:var(--a60);}
+.kp-e{background:var(--g50);color:var(--g60);}
+.kp-t{background:var(--b50);color:var(--b60);}
+.no-attend{font-size:11px;color:var(--hi);text-align:center;padding:8px 0;}
+
+/* ===== モード切替 ===== */
+.mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.mode-btn{padding:10px 8px;text-align:center;border-radius:var(--rad);border:0.5px solid var(--bd2);background:var(--sur);color:var(--mu);cursor:pointer;transition:all .15s;}
+.mode-btn .mode-label{font-size:14px;font-weight:700;}
+.mode-btn .mode-sub{font-size:10px;margin-top:2px;}
+.mode-btn.active-shikomi{border-color:var(--a60);background:var(--a50);}
+.mode-btn.active-shikomi .mode-label{color:var(--a80);}
+.mode-btn.active-shikomi .mode-sub{color:var(--a60);}
+.mode-btn.active-eigyo{border-color:var(--g60);background:var(--g50);}
+.mode-btn.active-eigyo .mode-label{color:var(--g80);}
+.mode-btn.active-eigyo .mode-sub{color:var(--g60);}
+.mode-btn.inactive .mode-label{color:var(--mu);}
+.mode-btn.inactive .mode-sub{color:var(--hi);}
+
+/* ===== 丸め設定 ===== */
+.round-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.round-item label{font-size:12px;color:var(--mu);display:block;margin-bottom:6px;}
+.round-item .ri-row{display:flex;gap:6px;align-items:center;}
+.round-item input[type=number]{width:60px;font-size:13px;padding:6px 8px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);}
+.round-item select{font-size:12px;padding:6px 8px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
+.round-unit-lbl{font-size:12px;color:var(--mu);}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<!-- ========== 店舗選択画面 ========== -->
+<div id="storeScreen">
+  <div class="store-sel-logo">
+    <div class="logo-top">炭火焼鳥</div>
+    <div class="logo-kitchen">KITCHEN</div>
+    <div class="logo-main">
+      <span class="logo-hiyoko">ひよこ</span>
+      <svg class="logo-chick" viewBox="0 0 40 40">
+        <circle class="logo-chick-body" cx="20" cy="22" r="13"/>
+        <circle class="logo-chick-body" cx="20" cy="11" r="9"/>
+        <polygon class="logo-chick-beak" points="29,11 35,13 29,15"/>
+        <circle class="logo-chick-eye" cx="22" cy="10" r="2"/>
+        <ellipse class="logo-chick-body" cx="14" cy="26" rx="4" ry="2" transform="rotate(-20,14,26)"/>
+        <ellipse class="logo-chick-body" cx="26" cy="26" rx="4" ry="2" transform="rotate(20,26,26)"/>
+      </svg>
+    </div>
+  </div>
+  <div class="store-sel-title">タイムカード</div>
+  <div class="store-sel-sub">店舗を選んでください</div>
+  <div class="store-sel-grid">
+    <div class="store-sel-btn" onclick="selectStore('本店',0,event)">
+      <div class="name">本店</div>
+      <div class="sub">ひよこ本店</div>
+    </div>
+    <div class="store-sel-btn" onclick="selectStore('east',1,event)">
+      <div class="name">east</div>
+      <div class="sub">ひよこeast</div>
+    </div>
+    <div class="store-sel-btn" onclick="selectStore('ASAHI',2,event)">
+      <div class="name">ASAHI</div>
+      <div class="sub">ひよこASAHI</div>
+    </div>
+  </div>
+  <div class="store-sel-note">
+    各店舗のiPadには専用URLをブックマーク登録してください<br>
+    <code>?store=本店</code>　<code>?store=east</code>　<code>?store=ASAHI</code>
+  </div>
+</div>
+
+<!-- ========== メイン画面 ========== -->
+<div id="mainScreen">
+<div class="app">
+  <div class="header">
+    <div class="hdr-logo"><svg viewBox="0 0 40 40" width="24" height="24"><circle fill="#E8C44A" cx="20" cy="22" r="13"/><circle fill="#E8C44A" cx="20" cy="11" r="9"/><polygon fill="#E07830" points="29,11 35,13 29,15"/><circle fill="#3D2E23" cx="22" cy="10" r="2"/></svg></div>
+    <div>
+      <div class="hdr-title">kitchen ひよこ</div>
+      <span class="hdr-store" id="hdrStore"></span>
+    </div>
+    <div class="tabs" style="margin:0 0 0 16px;flex:1;max-width:480px">
+      <button class="tab on"  id="tab-punch"   onclick="sw('punch')">打刻</button>
+      <button class="tab"     id="tab-summary" onclick="sw('summary')">集計</button>
+      <button class="tab"     id="tab-log"     onclick="sw('log')">記録</button>
+      <button class="tab"     id="tab-monthly" onclick="sw('monthly')">月次CSV</button>
+      <button class="tab"     id="tab-history" onclick="sw('history')">履歴</button>
+      <button class="tab"     id="tab-master"  onclick="sw('master')">スタッフ</button>
+      <button class="tab"     id="tab-setting" onclick="sw('setting')">設定</button>
+    </div>
+    <div class="hdr-right" style="margin-left:12px">
+      <div class="hdr-clock" id="clock">--:--:--</div>
+      <button class="store-change-btn" onclick="changeStore()">店舗変更</button>
+    </div>
+  </div>
+
+  <!-- 打刻 -->
+  <div id="view-punch">
+    <div class="attend-panel" id="attendPanel">
+      <div class="store-card seisha-card" id="seishaPanel"><div class="store-card-head sch-seisha"><span class="store-card-name">正社員</span><span class="store-card-cnt">読込中</span></div><div class="store-card-body"><div class="no-attend">—</div></div></div>
+      <div class="store-card"><div class="store-card-head sch0"><span class="store-card-name">本店</span><span class="store-card-cnt">読込中</span></div><div class="store-card-body"><div class="no-attend">—</div></div></div>
+      <div class="store-card"><div class="store-card-head sch1"><span class="store-card-name">east</span><span class="store-card-cnt">読込中</span></div><div class="store-card-body"><div class="no-attend">—</div></div></div>
+      <div class="store-card"><div class="store-card-head sch2"><span class="store-card-name">ASAHI</span><span class="store-card-cnt">読込中</span></div><div class="store-card-body"><div class="no-attend">—</div></div></div>
+    </div>
+    <div class="mode-switch">
+      <div class="mode-btn" id="modeShikomi" onclick="setMode('仕込')">
+        <div class="mode-label">仕込モード</div>
+        <div class="mode-sub" id="modeShikomiSub">〜15:59 自動</div>
+      </div>
+      <div class="mode-btn" id="modeEigyo" onclick="setMode('営業')">
+        <div class="mode-label">営業モード</div>
+        <div class="mode-sub" id="modeEigyoSub">16:00〜 自動</div>
+      </div>
+    </div>
+    <div class="store-filter-row" id="storeFilterRow"></div>
+    <div class="kana-row" id="kanaRow"></div>
+    <div class="card-lbl" id="empGridLabel" style="font-size:11px;font-weight:600;color:var(--mu);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px"></div>
+    <div class="emp-grid" id="empGrid"></div>
+  </div>
+
+  <!-- 集計 -->
+  <div id="view-summary" style="display:none">
+    <div class="card">
+      <div class="filter-row">
+        <label style="font-size:12px;color:var(--mu)">開始</label>
+        <input type="date" id="sumFrom" onchange="loadSummary()" style="flex:1"/>
+        <label style="font-size:12px;color:var(--mu)">終了</label>
+        <input type="date" id="sumTo"   onchange="loadSummary()" style="flex:1"/>
+        <button class="icon-btn" onclick="shiftSumPeriod(-1)">前シフト</button>
+        <button class="icon-btn" onclick="setSumThisPeriod()">今シフト</button>
+        <button class="icon-btn" onclick="shiftSumPeriod(1)">次シフト</button>
+        <button class="icon-btn" onclick="loadSummary()">更新</button>
+      </div>
+      <div class="card-lbl">店舗別合計（丸め時間ベース）</div>
+      <div class="metric-row">
+        <div class="metric m0">
+          <div class="metric-head"><span class="metric-lbl">本店</span><span class="metric-icon">🏠</span></div>
+          <div class="metric-val" id="sm0">--</div>
+          <div class="metric-detail"><span class="md-s" id="sm0s">仕込 --</span><span class="md-e" id="sm0e">営業 --</span></div>
+        </div>
+        <div class="metric m1">
+          <div class="metric-head"><span class="metric-lbl">east</span><span class="metric-icon">🏬</span></div>
+          <div class="metric-val" id="sm1">--</div>
+          <div class="metric-detail"><span class="md-s" id="sm1s">仕込 --</span><span class="md-e" id="sm1e">営業 --</span></div>
+        </div>
+        <div class="metric m2">
+          <div class="metric-head"><span class="metric-lbl">ASAHI</span><span class="metric-icon">🏪</span></div>
+          <div class="metric-val" id="sm2">--</div>
+          <div class="metric-detail"><span class="md-s" id="sm2s">仕込 --</span><span class="md-e" id="sm2e">営業 --</span></div>
+        </div>
+      </div>
+      <div class="total-bar"><span class="total-lbl">3店舗合計</span><span class="total-val" id="smTotal">--</span></div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">従業員別（仕込・営業内訳）</div>
+      <div id="sumEmpBody"></div>
+    </div>
+  </div>
+
+  <!-- 記録 -->
+  <div id="view-log" style="display:none">
+    <div class="card">
+      <div class="filter-row">
+        <input type="date" id="logDate" style="flex:1" onchange="loadLog()"/>
+        <select id="logStore" onchange="loadLog()">
+          <option value="">全店舗</option>
+          <option>本店</option><option>east</option><option>ASAHI</option>
+        </select>
+        <select id="logKubun" onchange="loadLog()">
+          <option value="">全区分</option>
+          <option>仕込</option><option>営業</option><option>通し</option>
+        </select>
+        <button class="icon-btn" onclick="loadLog()">更新</button>
+      </div>
+      <div id="logBody"></div>
+    </div>
+  </div>
+
+  <!-- 月次CSV -->
+  <div id="view-monthly" style="display:none">
+    <div class="card">
+      <div class="card-lbl">集計期間の指定（20日締め）</div>
+      <div class="period-row">
+        <label>開始</label><input type="date" id="csvFrom" style="width:150px"/>
+        <label>終了</label><input type="date" id="csvTo"   style="width:150px"/>
+      </div>
+      <button class="icon-btn" onclick="setThisPeriod()" style="margin-bottom:14px">今月の締め期間をセット</button><br>
+      <button class="dl-btn" onclick="dlCsv()">FileMaker用CSVをダウンロード</button>
+      <div id="csvInfo" style="font-size:12px;color:var(--mu);margin-top:10px;min-height:18px"></div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">出力列（FileMakerフィールド名と完全一致）</div>
+      <div class="fm-fields">
+        <span class="fm-fn">社員番号</span><br>
+        <span class="fm-fn">出勤日数 本店</span> / <span class="fm-fn">営業時間 本店</span> / <span class="fm-fn">仕込時間 本店</span><br>
+        <span class="fm-fn">出勤日数 east</span> / <span class="fm-fn">営業時間 east</span> / <span class="fm-fn">仕込時間 east</span><br>
+        <span class="fm-fn">出勤日数 ASAHI</span> / <span class="fm-fn">営業時間 ASAHI</span> / <span class="fm-fn">仕込時間 ASAHI</span><br>
+        <span class="fm-fn">日付</span>（支払日）/ <span class="fm-fn">給与在籍</span>（空欄）/ 氏名
+      </div>
+      <div class="note" style="margin-top:8px">時間は小数（例：8時間30分 → 8.5）／丸め時間ベースで集計</div>
+    </div>
+  </div>
+
+  <!-- 履歴 -->
+  <div id="view-history" style="display:none">
+    <div class="card">
+      <div class="filter-row">
+        <label style="font-size:12px;color:var(--mu)">スタッフ</label>
+        <select id="histEmp" onchange="loadHistory()" style="flex:1;min-width:120px"></select>
+        <label style="font-size:12px;color:var(--mu)">開始</label>
+        <input type="date" id="histFrom" onchange="loadHistory()" style="width:140px"/>
+        <label style="font-size:12px;color:var(--mu)">終了</label>
+        <input type="date" id="histTo" onchange="loadHistory()" style="width:140px"/>
+        <button class="icon-btn" onclick="shiftHistPeriod(-1)">前シフト</button>
+        <button class="icon-btn" onclick="setHistThisPeriod()">今月</button>
+        <button class="icon-btn" onclick="shiftHistPeriod(1)">次シフト</button>
+        <button class="icon-btn" onclick="loadHistory()">更新</button>
+      </div>
+      <div id="histSummary" style="display:none">
+        <div class="metric-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px">
+          <div class="metric" style="background:var(--bg)">
+            <div style="font-size:11px;color:var(--mu);margin-bottom:3px">出勤日数</div>
+            <div style="font-size:22px;font-weight:700" id="histDays">--</div>
+          </div>
+          <div class="metric" style="background:var(--a50)">
+            <div style="font-size:11px;color:var(--a60);margin-bottom:3px">仕込</div>
+            <div style="font-size:22px;font-weight:700;color:var(--a80)" id="histShikomi">--</div>
+          </div>
+          <div class="metric" style="background:var(--g50)">
+            <div style="font-size:11px;color:var(--g60);margin-bottom:3px">営業</div>
+            <div style="font-size:22px;font-weight:700;color:var(--g80)" id="histEigyo">--</div>
+          </div>
+        </div>
+        <div class="total-bar" style="margin-bottom:12px">
+          <span class="total-lbl">合計</span>
+          <span class="total-val" id="histTotal">--</span>
+        </div>
+      </div>
+      <div id="histBody"></div>
+    </div>
+  </div>
+
+  <!-- 従業員マスタ -->
+  <div id="view-master" style="display:none">
+    <div class="card">
+      <div class="card-lbl">従業員マスタ（全店舗共通）</div>
+      <div class="mgr-header">
+        <span style="min-width:44px">管理番号</span>
+        <span style="flex:1">氏名</span>
+        <span style="width:90px">読み仮名</span>
+        <span style="width:70px">社員番号</span>
+        <span style="width:80px">店舗</span>
+        <span style="width:80px">雇用形態</span>
+        <span style="width:120px">入社日</span>
+        <span style="width:120px">退職日</span>
+        <span style="width:40px"></span>
+      </div>
+      <div id="empMgrList"></div>
+      <div style="display:flex;gap:7px;margin-top:10px">
+        <button class="add-btn" onclick="addEmpRow()">＋ 追加</button>
+        <button class="save-btn" onclick="saveEmps()">保存</button>
+      </div>
+      <div class="note" style="margin-top:8px">
+        <strong>管理番号：</strong>自動採番（1001〜）／Sheets直接入力は0001〜1000を使用<br>
+        <strong>社員番号：</strong>FileMaker・PCAと同じ本部管理番号<br>
+        <strong>読み仮名：</strong>苗字のひらがな（あいうえお順タブに使用）
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定 -->
+  <div id="view-setting" style="display:none">
+    <!-- 丸め設定 -->
+    <div class="card" style="margin-top:4px">
+      <div class="card-lbl">打刻時刻の丸め設定</div>
+      <div class="round-grid">
+        <div class="round-item">
+          <label>出勤時刻の丸め</label>
+          <div class="ri-row">
+            <input type="number" id="rInUnit" min="0" max="60" step="1" value="0"/>
+            <span class="round-unit-lbl">分単位</span>
+            <select id="rInMethod">
+              <option value="none">丸めなし</option>
+              <option value="ceil">切り上げ</option>
+              <option value="floor">切り捨て</option>
+              <option value="round">四捨五入</option>
+            </select>
+          </div>
+        </div>
+        <div class="round-item">
+          <label>退勤時刻の丸め</label>
+          <div class="ri-row">
+            <input type="number" id="rOutUnit" min="0" max="60" step="1" value="0"/>
+            <span class="round-unit-lbl">分単位</span>
+            <select id="rOutMethod">
+              <option value="none">丸めなし</option>
+              <option value="ceil">切り上げ</option>
+              <option value="floor">切り捨て</option>
+              <option value="round">四捨五入</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:10px">
+        例：出勤 30分・切り上げ → 8:10打刻 → <strong>8:30</strong>として計算<br>
+        例：退勤 30分・切り捨て → 17:55打刻 → <strong>17:30</strong>として計算<br>
+        丸めなし（0分）の場合は実打刻時刻をそのまま使用します
+      </div>
+      <button class="save-btn" style="margin-top:10px" onclick="saveRoundSettings()">丸め設定を保存</button>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- 打刻修正モーダル -->
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <h3>打刻修正</h3>
+    <div id="editBody"></div>
+    <div class="modal-actions">
+      <button class="m-del"    onclick="deleteRec()">削除</button>
+      <button class="m-cancel" onclick="closeModal('editModal')">キャンセル</button>
+      <button class="m-ok"     onclick="submitEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 打刻確認モーダル -->
+<div class="modal-bg" id="punchConfirmModal">
+  <div class="modal">
+    <h3 id="pcTitle">打刻確認</h3>
+    <div id="pcBody" style="font-size:14px;line-height:1.8;padding:4px 0 8px;"></div>
+    <div class="modal-actions">
+      <button class="m-cancel" onclick="closePunchConfirm()" style="min-height:48px;min-width:80px">キャンセル</button>
+      <button class="m-ok" id="pcOkBtn" style="min-height:48px;min-width:120px;font-size:14px" onclick="execPunch()">確認</button>
+    </div>
+  </div>
+</div>
+
+<!-- ローディングオーバーレイ -->
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- Supabase初期化 ----
+const SUPABASE_URL = 'https://cenigdvpcxphljrravnb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlbmlnZHZwY3hwaGxqcnJhdm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MDUxNjMsImV4cCI6MjA5MTI4MTE2M30.SqGR2XdD0nFUlsIoYi8SJTGyDw9tSRTdIfmgsSjCBLY';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  db: { schema: 'hiyoko_timecard' }
+});
+
+const STORES    = ['本店','east','ASAHI'];
+const STORE_CLS = ['s0','s1','s2'];
+const KANA_ROWS = ['全','あ','か','さ','た','な','は','ま','や','ら','わ'];
+const KANA_MAP  = {
+  'あ':['あ','い','う','え','お'],
+  'か':['か','き','く','け','こ'],
+  'さ':['さ','し','す','せ','そ'],
+  'た':['た','ち','つ','て','と'],
+  'な':['な','に','ぬ','ね','の'],
+  'は':['は','ひ','ふ','へ','ほ'],
+  'ま':['ま','み','む','め','も'],
+  'や':['や','ゆ','よ'],
+  'ら':['ら','り','る','れ','ろ'],
+  'わ':['わ','を','ん'],
+};
+
+let curStore  = -1;
+let employees = [];
+let openRecs  = {};
+let empRows   = [];
+let curKana   = '全';
+let curStoreFilter = '全';
+let allEmployees = [];
+let curMode   = '仕込';
+let editId    = '';
+
+// ---- 丸め設定 ----
+let roundSettings = { inUnit: 0, inMethod: 'none', outUnit: 0, outMethod: 'none' };
+
+function loadRoundSettings() {
+  try {
+    const s = localStorage.getItem('hiyoko_round');
+    if (s) roundSettings = Object.assign(roundSettings, JSON.parse(s));
+  } catch(e) {}
+  applyRoundSettingsToUI();
+}
+
+function applyRoundSettingsToUI() {
+  const ri = document.getElementById('rInUnit');
+  if (!ri) return;
+  document.getElementById('rInUnit').value    = roundSettings.inUnit   || 0;
+  document.getElementById('rInMethod').value  = roundSettings.inMethod || 'none';
+  document.getElementById('rOutUnit').value   = roundSettings.outUnit  || 0;
+  document.getElementById('rOutMethod').value = roundSettings.outMethod|| 'none';
+}
+
+function saveRoundSettings() {
+  roundSettings = {
+    inUnit:    parseInt(document.getElementById('rInUnit').value)   || 0,
+    inMethod:  document.getElementById('rInMethod').value,
+    outUnit:   parseInt(document.getElementById('rOutUnit').value)  || 0,
+    outMethod: document.getElementById('rOutMethod').value,
+  };
+  localStorage.setItem('hiyoko_round', JSON.stringify(roundSettings));
+  toast('丸め設定を保存しました');
+}
+
+// ---- Clock ----
+setInterval(() => {
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  const el=document.getElementById('clock');
+  if(el) el.textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+},1000);
+
+// ---- 時刻ユーティリティ（日本時間）----
+function nowJST() { return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Tokyo'})); }
+function todayJST() {
+  const d=nowJST(), y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+function timeJST() {
+  const d=nowJST();
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+}
+function roundTime(timeStr, unit, method) {
+  const u = Number(unit || 0);
+  if (!u || !method || method === 'none') return timeStr;
+  const parts = String(timeStr).split(':').map(Number);
+  const totalMins = parts[0] * 60 + (parts[1] || 0);
+  let rounded;
+  if (method === 'ceil')  rounded = Math.ceil(totalMins  / u) * u;
+  if (method === 'floor') rounded = Math.floor(totalMins / u) * u;
+  if (method === 'round') rounded = Math.round(totalMins / u) * u;
+  rounded = Math.max(0, Math.min(rounded, 23 * 60 + 59));
+  const h = Math.floor(rounded / 60);
+  const m = rounded % 60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':00';
+}
+function calcMinutes(inStr, outStr) {
+  const p1 = String(inStr).split(':').map(Number);
+  const p2 = String(outStr).split(':').map(Number);
+  let diff = (p2[0] * 60 + p2[1]) - (p1[0] * 60 + p1[1]);
+  if (diff < 0) diff += 1440;
+  return Math.round(diff);
+}
+
+// ---- Supabase API Layer ----
+// 各 action を Supabase クエリに変換。戻り値は旧GASと同じ形式を維持。
+async function api(action, body={}) {
+  if (action === 'getEmployees') {
+    const {data,error} = await sb.from('employees').select('*').order('sort_order');
+    if(error) throw new Error(error.message);
+    return { ok:true, employees: data.map(r=>({
+      mgmtNo:r.mgmt_no, name:r.name, kana:r.name_kana||'', empNo:r.employee_no||'',
+      sort:r.sort_order||0, store:r.store||'', hireDate:r.hire_date||'',
+      retireDate:r.retire_date||'', empType:r.employment_type||'アルバイト',
+    }))};
+  }
+
+  if (action === 'saveEmployees') {
+    const emps = body.employees || [];
+    const seen = new Set();
+    for(const e of emps){
+      const no=String(e.mgmtNo||'').trim();
+      if(!no) return {ok:false, error:'管理番号が空です: '+e.name};
+      if(seen.has(no)) return {ok:false, error:'管理番号が重複: '+no};
+      seen.add(no);
+    }
+    // 全削除 → 全挿入
+    const {error:delErr} = await sb.from('employees').delete().neq('id',0);
+    if(delErr) throw new Error(delErr.message);
+    if(emps.length){
+      const rows = emps.map((e,i)=>({
+        mgmt_no:e.mgmtNo, name:e.name, name_kana:e.kana||null, employee_no:e.empNo||null,
+        sort_order:i+1, is_active:true, store:e.store||'',
+        hire_date:e.hireDate||null, retire_date:e.retireDate||null,
+        employment_type:e.empType||'アルバイト',
+      }));
+      const {error:insErr} = await sb.from('employees').insert(rows);
+      if(insErr) throw new Error(insErr.message);
+    }
+    return {ok:true};
+  }
+
+  if (action === 'punchIn') {
+    if(!body.mgmtNo) throw new Error('管理番号が空です');
+    if(!body.empName) throw new Error('氏名が空です');
+    if(!body.store || STORES.indexOf(body.store)<0) throw new Error('無効な店舗です');
+    if(!['仕込','営業','通し'].includes(body.kubun)) throw new Error('無効な区分です');
+    // 重複チェック
+    const {data:dup} = await sb.from('time_records').select('id,store,kubun,clock_in_raw')
+      .eq('mgmt_no',body.mgmtNo).is('clock_out_raw',null).eq('is_deleted',false).limit(1);
+    if(dup&&dup.length){
+      const r=dup[0];
+      throw new Error('重複出勤: '+r.store+'・'+r.kubun+'で出勤中です（'+r.clock_in_raw+'〜）');
+    }
+    const dateStr = todayJST();
+    const actualIn = timeJST();
+    const roundedIn = roundTime(actualIn, body.roundInUnit, body.roundInMethod);
+    const row = {
+      date:dateStr, mgmt_no:body.mgmtNo, employee_name:body.empName,
+      store:body.store, kubun:body.kubun,
+      clock_in_raw:actualIn, clock_in_rounded:roundedIn,
+      employee_no:body.empNo||null,
+    };
+    const {data,error} = await sb.from('time_records').insert(row).select('id').single();
+    if(error) throw new Error(error.message);
+    return {ok:true, id:data.id, time:actualIn, roundedTime:roundedIn, date:dateStr};
+  }
+
+  if (action === 'punchOut') {
+    if(!body.mgmtNo) throw new Error('管理番号が空です');
+    const {data:rows,error:selErr} = await sb.from('time_records').select('*')
+      .eq('mgmt_no',body.mgmtNo).is('clock_out_raw',null).eq('is_deleted',false)
+      .order('created_at',{ascending:false}).limit(1);
+    if(selErr) throw new Error(selErr.message);
+    if(!rows||!rows.length) throw new Error('出勤記録が見つかりません');
+    const r=rows[0];
+    const actualOut = timeJST();
+    const roundedOut = roundTime(actualOut, body.roundOutUnit, body.roundOutMethod);
+    const roundedIn = r.clock_in_rounded || r.clock_in_raw;
+    const actualMins = calcMinutes(r.clock_in_raw, actualOut);
+    const roundedMins = calcMinutes(roundedIn, roundedOut);
+    const store = (r.kubun==='通し' && body.store) ? body.store : r.store;
+    const {error:upErr} = await sb.from('time_records').update({
+      clock_out_raw:actualOut, clock_out_rounded:roundedOut,
+      work_minutes_raw:actualMins, work_minutes_rounded:roundedMins, store:store,
+    }).eq('id',r.id);
+    if(upErr) throw new Error(upErr.message);
+    return {ok:true, time:actualOut, roundedTime:roundedOut, minutes:roundedMins};
+  }
+
+  if (action === 'getOpenRecords') {
+    const {data,error} = await sb.from('time_records').select('*')
+      .is('clock_out_raw',null).eq('is_deleted',false);
+    if(error) throw new Error(error.message);
+    const open = (data||[])
+      .filter(r => r.store===body.store || r.kubun==='通し')
+      .map(r=>({
+        id:r.id, date:r.date, mgmtNo:r.mgmt_no, empName:r.employee_name,
+        store:r.store, kubun:r.kubun, inTime:r.clock_in_raw,
+        roundedIn:r.clock_in_rounded||'',
+      }));
+    return {ok:true, openRecords:open};
+  }
+
+  if (action === 'getRecords') {
+    let q = sb.from('time_records').select('*').eq('is_deleted',false);
+    if(body.date) q=q.eq('date',body.date);
+    if(body.store) q=q.eq('store',body.store);
+    if(body.kubun) q=q.eq('kubun',body.kubun);
+    if(body.from&&body.to) q=q.gte('date',body.from).lte('date',body.to);
+    const {data,error} = await q.order('date').order('clock_in_raw');
+    if(error) throw new Error(error.message);
+    return {ok:true, records:(data||[]).map(r=>({
+      id:r.id, date:r.date, mgmtNo:r.mgmt_no, empName:r.employee_name,
+      store:r.store, kubun:r.kubun,
+      in:r.clock_in_raw||'', out:r.clock_out_raw||'',
+      minutes:r.work_minutes_raw, fixed:r.is_corrected?'修正済':'', memo:r.correction_memo||'',
+      empNo:r.employee_no||'',
+      roundedIn:r.clock_in_rounded||'', roundedOut:r.clock_out_rounded||'',
+      roundedMinutes:r.work_minutes_rounded!=null?Number(r.work_minutes_rounded):null,
+    }))};
+  }
+
+  if (action === 'updateRecord') {
+    if(!body.id) throw new Error('IDが空です');
+    // 現在のレコードを取得
+    const {data:cur,error:getErr} = await sb.from('time_records').select('*').eq('id',body.id).single();
+    if(getErr) throw new Error('IDが見つかりません');
+    const newIn = body.in || cur.clock_in_raw;
+    const newOut = body.out || cur.clock_out_raw;
+    const upd = { is_corrected:true, correction_memo:body.memo||'修正' };
+    if(body.in) upd.clock_in_raw = body.in;
+    if(body.out) {
+      upd.clock_out_raw = body.out;
+      upd.work_minutes_raw = calcMinutes(newIn, newOut);
+    }
+    if(body.roundedIn) upd.clock_in_rounded = body.roundedIn;
+    if(body.roundedOut) upd.clock_out_rounded = body.roundedOut;
+    if(body.roundedIn || body.roundedOut) {
+      const rIn = body.roundedIn || cur.clock_in_rounded || newIn;
+      const rOut = body.roundedOut || cur.clock_out_rounded || newOut;
+      if(rIn && rOut) upd.work_minutes_rounded = calcMinutes(rIn, rOut);
+    }
+    const {error:upErr} = await sb.from('time_records').update(upd).eq('id',body.id);
+    if(upErr) throw new Error(upErr.message);
+    return {ok:true};
+  }
+
+  if (action === 'deleteRecord') {
+    if(!body.id) throw new Error('IDが空です');
+    const {error} = await sb.from('time_records').update({is_deleted:true}).eq('id',body.id);
+    if(error) throw new Error(error.message);
+    return {ok:true};
+  }
+
+  if (action === 'getDailySummary') {
+    const d = await api('getRecords',{date:body.date});
+    const recs = (d.records||[]).filter(r=>r.out);
+    const byStore = {'本店':0,'east':0,'ASAHI':0};
+    const byEmp = {};
+    recs.forEach(r=>{
+      const mins = r.roundedMinutes!=null ? Number(r.roundedMinutes) : Number(r.minutes);
+      byStore[r.store] = (byStore[r.store]||0) + mins;
+      const key = r.mgmtNo;
+      if(!byEmp[key]) byEmp[key] = {name:r.empName,store:r.store,total:0,shikomi:0,eigyo:0,tooshi:0};
+      byEmp[key].total += mins;
+      byEmp[key].shikomi += r.kubun==='仕込' ? mins : 0;
+      byEmp[key].eigyo += r.kubun==='営業' ? mins : 0;
+      byEmp[key].tooshi += r.kubun==='通し' ? mins : 0;
+    });
+    return {ok:true, byStore, byEmp};
+  }
+
+  if (action === 'getShiftSummary') {
+    const {from,to} = body;
+    if(!from||!to) throw new Error('from/toが必要です');
+    const d = await api('getRecords',{from,to});
+    const empD = await api('getEmployees');
+    const empMaster = {};
+    (empD.employees||[]).forEach(e=>{ empMaster[e.mgmtNo]={store:e.store,empNo:e.empNo}; });
+    const recs = (d.records||[]).filter(r=>r.out);
+    const byStore = {'本店':0,'east':0,'ASAHI':0};
+    const byStoreKubun = {
+      '本店':{shikomi:0,eigyo:0},'east':{shikomi:0,eigyo:0},'ASAHI':{shikomi:0,eigyo:0},
+    };
+    const byEmp = {};
+    recs.forEach(r=>{
+      const mins = r.roundedMinutes!=null ? Number(r.roundedMinutes) : Number(r.minutes);
+      const store = r.store, kubun = r.kubun;
+      byStore[store] = (byStore[store]||0)+mins;
+      if(byStoreKubun[store]){
+        if(kubun==='仕込') byStoreKubun[store].shikomi += mins;
+        if(kubun==='営業') byStoreKubun[store].eigyo += mins;
+        if(kubun==='通し') byStoreKubun[store].tooshi = (byStoreKubun[store].tooshi||0)+mins;
+      }
+      const key = r.mgmtNo;
+      if(!byEmp[key]){
+        const master = empMaster[key]||{};
+        byEmp[key] = {name:r.empName,store:master.store||'',days:new Set(),total:0,shikomi:0,eigyo:0,tooshi:0};
+      }
+      byEmp[key].days.add(r.date);
+      byEmp[key].total += mins;
+      byEmp[key].shikomi += kubun==='仕込' ? mins : 0;
+      byEmp[key].eigyo += kubun==='営業' ? mins : 0;
+      byEmp[key].tooshi += kubun==='通し' ? mins : 0;
+    });
+    const result = {};
+    Object.entries(byEmp).forEach(([k,v])=>{
+      result[k]={name:v.name,store:v.store,days:v.days.size,total:v.total,shikomi:v.shikomi,eigyo:v.eigyo,tooshi:v.tooshi};
+    });
+    return {ok:true, byStore, byStoreKubun, byEmp:result};
+  }
+
+  if (action === 'getCalendarData') {
+    return api('getRecords',{from:body.from,to:body.to});
+  }
+
+  if (action === 'getMonthlyCsv') {
+    const from=body.from, to=body.to;
+    if(!from||!to) throw new Error('from/toが必要です');
+    const empD = await api('getEmployees');
+    const seishaSet = new Set();
+    (empD.employees||[]).forEach(e=>{ if(e.empType==='正社員') seishaSet.add(e.mgmtNo); });
+    const d = await api('getRecords',{from,to});
+    const recs = (d.records||[]).filter(r=>r.out && !seishaSet.has(r.mgmtNo));
+    const byEmp = {};
+    recs.forEach(r=>{
+      const key=r.mgmtNo;
+      if(!byEmp[key]) byEmp[key]={
+        empNo:r.empNo, mgmtNo:r.mgmtNo, name:r.empName,
+        days:{'本店':new Set(),'east':new Set(),'ASAHI':new Set()},
+        eigyo:{'本店':0,'east':0,'ASAHI':0}, shikomi:{'本店':0,'east':0,'ASAHI':0},
+      };
+      const e=byEmp[key];
+      const mins = r.roundedMinutes!=null ? Number(r.roundedMinutes) : Number(r.minutes);
+      if(e.days[r.store]) e.days[r.store].add(r.date);
+      if(r.kubun==='営業') e.eigyo[r.store]=(e.eigyo[r.store]||0)+mins;
+      if(r.kubun==='仕込') e.shikomi[r.store]=(e.shikomi[r.store]||0)+mins;
+      if(r.kubun==='通し') e.eigyo[r.store]=(e.eigyo[r.store]||0)+mins;
+    });
+    const toDate = new Date(to);
+    toDate.setDate(toDate.getDate()+6);
+    const payDate = toDate.getFullYear()+'/'+String(toDate.getMonth()+1).padStart(2,'0')+'/'+String(toDate.getDate()).padStart(2,'0');
+    const toH = mins => Math.round(mins/60*100)/100;
+    const BOM='\uFEFF';
+    const header=['社員番号','出勤日数 本店','営業時間 本店','仕込時間 本店','出勤日数 east','営業時間 east','仕込時間 east','出勤日数 ASAHI','営業時間 ASAHI','仕込時間 ASAHI','日付','給与在籍','集計開始','集計終了','氏名'].join(',');
+    const lines = Object.values(byEmp)
+      .sort((a,b)=>Number(a.empNo)-Number(b.empNo)||a.mgmtNo.localeCompare(b.mgmtNo))
+      .map(e=>[
+        e.empNo,
+        e.days['本店'].size, toH(e.eigyo['本店']), toH(e.shikomi['本店']),
+        e.days['east'].size, toH(e.eigyo['east']), toH(e.shikomi['east']),
+        e.days['ASAHI'].size, toH(e.eigyo['ASAHI']), toH(e.shikomi['ASAHI']),
+        payDate,'',from.replace(/-/g,'/'),to.replace(/-/g,'/'),e.name
+      ].join(','));
+    return {ok:true, csv:BOM+header+'\n'+lines.join('\n'), rowCount:lines.length};
+  }
+
+  if (action === 'cleanupDeleted') {
+    const {data,error} = await sb.from('time_records').delete().eq('is_deleted',true).select('id');
+    if(error) throw new Error(error.message);
+    return {ok:true, deleted:(data||[]).length};
+  }
+
+  throw new Error('Unknown action: '+action);
+}
+
+function toast(msg, type){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast on' + (type ? ' t-'+type : ' t-ok');
+  const dur = type === 'err' ? 4000 : 2400;
+  clearTimeout(el._t); el._t=setTimeout(()=>{el.className='toast';},dur);
+}
+function showLoading(){ document.getElementById('loadingOverlay').classList.add('on'); }
+function hideLoading(){ document.getElementById('loadingOverlay').classList.remove('on'); }
+
+// ---- 店舗判定 ----
+function initStore(){
+  let s = '';
+  try {
+    const params=new URLSearchParams(location.search);
+    s=params.get('store')||'';
+  } catch(e){}
+  if(!s) s = localStorage.getItem('hiyoko_store')||'';
+  const idx=STORES.indexOf(s);
+  if(idx>=0){
+    enterMain(idx);
+  } else {
+    document.getElementById('storeScreen').style.display='flex';
+    document.getElementById('mainScreen').style.display='none';
+  }
+}
+
+function selectStore(name,idx,e){ if(e){e.preventDefault();e.stopPropagation();} enterMain(idx); }
+
+async function enterMain(idx){
+  curStore=idx;
+  localStorage.setItem('hiyoko_store', STORES[idx]);
+  document.getElementById('storeScreen').style.display='none';
+  document.getElementById('mainScreen').style.display='block';
+  const badge=document.getElementById('hdrStore');
+  badge.textContent='ひよこ'+STORES[curStore];
+  badge.className='hdr-store '+STORE_CLS[curStore];
+  curMode = autoMode();
+  curStoreFilter = STORES[curStore];
+  buildStoreFilterRow();
+  buildKanaRow();
+  await loadEmployees();
+  try{
+    const d=await api('getOpenRecords',{store:STORES[curStore]});
+    openRecs={};
+    (d.openRecords||[]).forEach(r=>{openRecs[r.mgmtNo]={id:r.id, kubun:r.kubun, inTime:r.inTime, roundedIn:r.roundedIn, store:r.store||''};});
+  }catch(e){}
+  renderModeSwitch();
+  renderEmpGrid();
+  loadAttendPanel();
+  sw('punch');
+}
+
+function changeStore(){
+  curStore=-1; openRecs={};
+  const params=new URLSearchParams(location.search);
+  if(params.get('store')){
+    toast('このiPadの店舗はURL設定で固定されています');
+    return;
+  }
+  localStorage.removeItem('hiyoko_store');
+  document.getElementById('mainScreen').style.display='none';
+  document.getElementById('storeScreen').style.display='flex';
+}
+
+// ---- Tabs ----
+let curTab = 'punch';
+function sw(name){
+  curTab = name;
+  ['punch','summary','log','monthly','history','master','setting'].forEach(t=>{
+    document.getElementById('view-'+t).style.display = t===name ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('on', t===name);
+  });
+  if(name==='punch')   loadAttendPanel();
+  if(name==='summary'){
+    if(!document.getElementById('sumFrom').value) setSumThisPeriod();
+    loadSummary();
+  }
+  if(name==='log'){
+    if(!document.getElementById('logDate').value) document.getElementById('logDate').value=today();
+    loadLog();
+  }
+  if(name==='monthly')  setThisPeriod();
+  if(name==='history'){ initHistoryTab(); }
+  if(name==='master')   renderMaster();
+  if(name==='setting')  applyRoundSettingsToUI();
+}
+
+const today=()=>todayJST();
+// 現在のシフト期間（20日締め: 21日〜翌月20日）
+function currentShift(){
+  const d=new Date(), y=d.getFullYear(), m=d.getMonth()+1, day=d.getDate();
+  if(day>=21){
+    const ny=m===12?y+1:y, nm=m===12?1:m+1;
+    return {from:`${y}-${String(m).padStart(2,'0')}-21`, to:`${ny}-${String(nm).padStart(2,'0')}-20`};
+  } else {
+    const pm=m===1?12:m-1, py=m===1?y-1:y;
+    return {from:`${py}-${String(pm).padStart(2,'0')}-21`, to:`${y}-${String(m).padStart(2,'0')}-20`};
+  }
+}
+function fmtMin(m){
+  if(m===''||m===null||m===undefined||isNaN(m)) return '--';
+  const v=Math.round(Number(m));
+  return Math.floor(v/60)+'h'+String(v%60).padStart(2,'0')+'m';
+}
+
+// ---- 従業員 ----
+async function loadEmployees(){
+  try{
+    const d=await api('getEmployees');
+    allEmployees = d.employees||[];
+    const activeEmps = allEmployees.filter(e=>!e.retireDate||e.retireDate>today());
+    if(curStoreFilter==='全'){
+      employees = activeEmps;
+    } else {
+      employees = activeEmps.filter(e=>e.store===curStoreFilter);
+    }
+    buildStoreFilterRow();
+  }catch(e){ toast('従業員データ取得失敗: '+e.message); }
+}
+
+// ---- モード自動判定（16時切替）----
+function autoMode(){
+  const h = new Date().getHours();
+  return h >= 16 ? '営業' : '仕込';
+}
+
+function setMode(mode){
+  curMode = mode;
+  renderModeSwitch();
+  renderEmpGrid();
+}
+
+function renderModeSwitch(){
+  const isS = curMode === '仕込';
+  const mS  = document.getElementById('modeShikomi');
+  const mE  = document.getElementById('modeEigyo');
+  const subS = document.getElementById('modeShikomiSub');
+  const subE = document.getElementById('modeEigyoSub');
+  if(!mS) return;
+  mS.className = 'mode-btn ' + (isS ? 'active-shikomi' : 'inactive');
+  mE.className = 'mode-btn ' + (!isS ? 'active-eigyo'  : 'inactive');
+  subS.textContent = isS  ? '選択中' : '〜15:59 自動';
+  subE.textContent = !isS ? '選択中' : '16:00〜 自動';
+}
+
+// ---- 出勤状況パネル ----
+async function loadAttendPanel(){
+  try {
+    const d = await api('getRecords', { date: today() });
+    const recs = (d.records||[]).filter(r => !r.out);
+    renderAttendPanel(recs);
+  } catch(e) {}
+}
+
+function renderAttendPanel(recs){
+  const panel = document.getElementById('attendPanel');
+  if(!panel) return;
+
+  // 正社員（通し）とアルバイトを分離
+  const seishaRecs = recs.filter(r => r.kubun === '通し')
+    .sort((a,b) => String(a.in).localeCompare(String(b.in)));
+  const partRecs = recs.filter(r => r.kubun !== '通し');
+
+  // 各店舗枠（正社員除外） — index 0は正社員枠なので+1
+  STORES.forEach((store, i) => {
+    const storeRecs = partRecs.filter(r => r.store === store)
+      .sort((a,b) => String(a.in).localeCompare(String(b.in)));
+    const card = panel.children[i + 1];
+    const head = card.querySelector('.store-card-head');
+    const body = card.querySelector('.store-card-body');
+    head.querySelector('.store-card-cnt').textContent =
+      storeRecs.length ? storeRecs.length + '名出勤中' : '出勤なし';
+    if(!storeRecs.length){
+      body.innerHTML = '<div class="no-attend">出勤なし</div>';
+      return;
+    }
+    body.innerHTML = storeRecs.map(r => {
+      const kubunCls = r.kubun === '仕込' ? 'kp-s' : 'kp-e';
+      const inTime = String(r.roundedIn || r.in || '').slice(0,5);
+      return `<div class="emp-attend-line">
+        <span class="eal-name">${r.empName}</span>
+        <span class="kp ${kubunCls}">${r.kubun}</span>
+        <span class="eal-time">${inTime}〜</span>
+      </div>`;
+    }).join('');
+  });
+
+  // 正社員枠
+  const seishaCard = document.getElementById('seishaPanel');
+  if(!seishaCard) return;
+  const sHead = seishaCard.querySelector('.store-card-head');
+  const sBody = seishaCard.querySelector('.store-card-body');
+  sHead.querySelector('.store-card-cnt').textContent =
+    seishaRecs.length ? seishaRecs.length + '名出勤中' : '出勤なし';
+  if(!seishaRecs.length){
+    sBody.innerHTML = '<div class="no-attend">出勤なし</div>';
+    return;
+  }
+  sBody.innerHTML = seishaRecs.map(r => {
+    const inTime = String(r.roundedIn || r.in || '').slice(0,5);
+    return `<div class="emp-attend-line">
+      <span class="eal-name">${r.empName}</span>
+      <span class="kp kp-t">通し</span>
+      <span class="eal-time">${inTime}〜</span>
+    </div>`;
+  }).join('');
+}
+
+// ---- 店舗フィルタ ----
+function buildStoreFilterRow(){
+  const row=document.getElementById('storeFilterRow');
+  if(!row) return;
+  row.innerHTML='';
+  const filters = ['全', ...STORES];
+  filters.forEach((s,i)=>{
+    const btn=document.createElement('button');
+    const isAll = s==='全';
+    const storeIdx = isAll ? -1 : STORES.indexOf(s);
+    let cls='sf-btn';
+    if(isAll) cls+=' sf-all';
+    if(s===curStoreFilter){
+      cls += isAll ? ' sf-on-all' : ' sf-on-'+storeIdx;
+    }
+    btn.className=cls;
+    btn.textContent=isAll ? '全店舗' : s;
+    btn.onclick=()=>{ setStoreFilter(s); };
+    row.appendChild(btn);
+  });
+}
+
+function setStoreFilter(s){
+  curStoreFilter=s;
+  const activeEmps = allEmployees.filter(e=>!e.retireDate||e.retireDate>today());
+  if(s==='全'){
+    employees=activeEmps;
+  } else {
+    employees=activeEmps.filter(e=>e.store===s);
+  }
+  buildStoreFilterRow();
+  renderEmpGrid();
+}
+
+// ---- あいうえお順タブ ----
+function buildKanaRow(){
+  const row=document.getElementById('kanaRow');
+  row.innerHTML='';
+  KANA_ROWS.forEach(k=>{
+    const btn=document.createElement('button');
+    btn.className='kana-btn'+(k==='全'?' all':'')+(k===curKana?' on':'');
+    btn.textContent=k;
+    btn.onclick=()=>{ curKana=k; buildKanaRow(); renderEmpGrid(); };
+    row.appendChild(btn);
+  });
+}
+
+function filterByKana(emps){
+  if(curKana==='全') return emps;
+  const targets=KANA_MAP[curKana]||[];
+  return emps.filter(e=>{
+    const k=String(e.kana||'');
+    return targets.some(t=>k.startsWith(t));
+  });
+}
+
+// ---- 打刻グリッド ----
+function renderEmpGrid(){
+  // かな絞りは全店舗の在籍中スタッフから
+  const kanaBase = curKana==='全' ? employees
+    : filterByKana(allEmployees.filter(e=>!e.retireDate||e.retireDate>today()));
+  const filtered = curKana==='全' ? employees : kanaBase;
+  const grid = document.getElementById('empGrid');
+  const lbl  = document.getElementById('empGridLabel');
+  if(!grid) return;
+  grid.innerHTML = '';
+
+  if(!employees.length){
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1">従業員マスタが空です。設定タブから登録してください。</div>';
+    lbl.textContent=''; return;
+  }
+  if(!filtered.length){
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1">「'+curKana+'」行の従業員はいません</div>';
+    lbl.textContent=''; return;
+  }
+
+  // 正社員を先頭、残りはかな順
+  filtered.sort((a,b)=>{
+    const aS = a.empType==='正社員' ? 0 : 1;
+    const bS = b.empType==='正社員' ? 0 : 1;
+    if(aS !== bS) return aS - bS;
+    return (a.kana||'').localeCompare(b.kana||'','ja');
+  });
+
+  lbl.textContent = curKana==='全'
+    ? `全 ${filtered.length}名`
+    : `「${curKana}」行 — ${filtered.length}名`;
+
+  const isShikomi = curMode === '仕込';
+
+  filtered.forEach(emp => {
+    const open = openRecs[emp.mgmtNo];
+    const openKubun = open ? open.kubun : null;
+    const isTooshi = emp.empType === '正社員';
+    const isOpenShikomi = openKubun === '仕込';
+    const isOpenTooshi  = openKubun === '通し';
+
+    let cls = 'emp-tile';
+    if(open) cls += isOpenTooshi ? ' t-tooshi' : (isOpenShikomi ? ' t-shikomi' : ' t-eigyo');
+
+    const tile = document.createElement('div');
+    tile.className = cls;
+
+    let pill;
+    if(open){
+      const pillCls = isOpenTooshi ? 'sp-t' : (isOpenShikomi ? 'sp-s' : 'sp-e');
+      const kubunLabel = isOpenTooshi ? '通し' : openKubun;
+      const inDisp = String(open.roundedIn || open.inTime || '').slice(0,5);
+      const storeNote = (isOpenTooshi && open.store && open.store !== STORES[curStore])
+        ? `<span style="font-size:9px;color:var(--mu);margin-left:2px">(${open.store})</span>` : '';
+      pill = `<span class="status-pill ${pillCls}">${kubunLabel} 出勤中</span>${storeNote}`
+           + (inDisp ? `<span style="font-size:10px;color:var(--hi);margin-left:4px">${inDisp}〜</span>` : '');
+    } else {
+      pill = '<div class="sp-blank"></div>';
+    }
+
+    let btnCls, btnLabel, punchKubun;
+    if(open){
+      const outStyle = isOpenTooshi ? 'tooshi' : (isOpenShikomi ? 'shikomi' : 'eigyo');
+      btnCls   = 'punch-single ps-' + outStyle + '-out';
+      btnLabel = '退　勤';
+      punchKubun = openKubun;
+    } else if(isTooshi){
+      btnCls   = 'punch-single ps-tooshi-in';
+      btnLabel = '出　勤';
+      punchKubun = '通し';
+    } else {
+      btnCls   = 'punch-single ps-' + (isShikomi?'shikomi':'eigyo') + '-in';
+      btnLabel = '出　勤';
+      punchKubun = curMode;
+    }
+
+    const empJson = JSON.stringify(emp).replace(/"/g,'&quot;');
+    tile.innerHTML = `
+      ${pill}
+      <div class="emp-name">${emp.name}</div>
+      <button class="${btnCls}" onclick="doPunch(${empJson},'${punchKubun}','${open?'out':'in'}')">${btnLabel}</button>`;
+    grid.appendChild(tile);
+  });
+}
+
+// ---- 打刻処理（確認ダイアログ＋連打防止＋ローディング）----
+let punchLock = false;
+let pendingPunch = null;
+
+function doPunch(emp, kubun, dir){
+  if(punchLock) return;
+  const now = new Date();
+  const timeStr = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  pendingPunch = { emp, kubun, dir };
+  const dirLabel = dir === 'in' ? '出勤' : '退勤';
+  const kubunLabel = kubun === '仕込' ? '🟠 仕込' : kubun === '通し' ? '🔵 通し' : '🟢 営業';
+  document.getElementById('pcTitle').textContent = dirLabel + '確認';
+  document.getElementById('pcBody').innerHTML =
+    `<strong>${emp.name}</strong> さん<br>` +
+    `${kubunLabel} ／ ${dirLabel}<br>` +
+    `<span style="color:var(--mu)">現在時刻 ${timeStr}</span>`;
+  const okBtn = document.getElementById('pcOkBtn');
+  okBtn.textContent = dirLabel + 'する';
+  okBtn.className = dir === 'in' ? 'm-ok' : 'm-ok';
+  okBtn.style.minHeight = '48px';
+  okBtn.style.minWidth = '120px';
+  okBtn.style.fontSize = '14px';
+  document.getElementById('punchConfirmModal').classList.add('on');
+}
+
+function closePunchConfirm(){
+  document.getElementById('punchConfirmModal').classList.remove('on');
+  pendingPunch = null;
+}
+
+async function execPunch(){
+  if(!pendingPunch || punchLock) return;
+  const { emp, kubun, dir } = pendingPunch;
+  closePunchConfirm();
+  punchLock = true;
+
+  const nowStr = new Date().toTimeString().slice(0,8);
+
+  if(dir === 'in'){
+    // 楽観的UI更新: API完了前にグリッドを即反映
+    openRecs[emp.mgmtNo] = { id:'_pending', kubun, inTime: nowStr, roundedIn:'', store: STORES[curStore] };
+    renderEmpGrid();
+    toast(emp.name + ' ' + (kubun==='通し'?'通し':''+kubun) + ' 出勤 ' + nowStr);
+    // APIをバックグラウンドで実行
+    api('punchIn', {
+      mgmtNo: emp.mgmtNo, empNo: emp.empNo, empName: emp.name,
+      store: STORES[curStore], kubun,
+      roundInUnit: roundSettings.inUnit, roundInMethod: roundSettings.inMethod,
+    }).then(d => {
+      openRecs[emp.mgmtNo] = { id: d.id, kubun, inTime: d.time, roundedIn: d.roundedTime, store: STORES[curStore] };
+      renderEmpGrid();
+      loadAttendPanel().catch(()=>{});
+    }).catch(e => {
+      delete openRecs[emp.mgmtNo];
+      renderEmpGrid();
+      toast('出勤エラー: ' + e.message, 'err');
+    }).finally(() => { punchLock = false; });
+  } else {
+    const prevOpen = openRecs[emp.mgmtNo];
+    delete openRecs[emp.mgmtNo];
+    renderEmpGrid();
+    toast(emp.name + ' 退勤 ' + nowStr);
+    api('punchOut', {
+      mgmtNo: emp.mgmtNo, store: STORES[curStore],
+      roundOutUnit: roundSettings.outUnit, roundOutMethod: roundSettings.outMethod,
+    }).then(d => {
+      const dispTime = (roundSettings.outUnit && roundSettings.outMethod !== 'none')
+        ? d.time + ' → ' + d.roundedTime : d.time;
+      toast(emp.name + ' 退勤 ' + dispTime + ' ' + fmtMin(d.minutes));
+      loadAttendPanel().catch(()=>{});
+    }).catch(e => {
+      if(prevOpen) openRecs[emp.mgmtNo] = prevOpen;
+      renderEmpGrid();
+      toast('退勤エラー: ' + e.message, 'err');
+    }).finally(() => { punchLock = false; });
+  }
+}
+
+// ---- 集計（シフト期間合計・丸め時間ベース）----
+function setSumThisPeriod(){
+  const s=currentShift();
+  document.getElementById('sumFrom').value=s.from;
+  document.getElementById('sumTo').value=s.to;
+  loadSummary();
+}
+
+function shiftSumPeriod(dir){
+  const from=document.getElementById('sumFrom').value;
+  if(!from) { setSumThisPeriod(); return; }
+  const d=new Date(from);
+  d.setMonth(d.getMonth()+dir);
+  const y1=d.getFullYear(), m1=d.getMonth()+1;
+  const d2=new Date(y1, m1, 20);
+  const y2=d2.getFullYear(), m2=d2.getMonth()+1;
+  document.getElementById('sumFrom').value=`${y1}-${String(m1).padStart(2,'0')}-21`;
+  document.getElementById('sumTo').value=`${y2}-${String(m2).padStart(2,'0')}-20`;
+  loadSummary();
+}
+
+async function loadSummary(){
+  const from=document.getElementById('sumFrom').value;
+  const to  =document.getElementById('sumTo').value;
+  if(!from||!to) return;
+  showLoading();
+  try{
+    const d=await api('getShiftSummary',{from,to});
+    const stores=['本店','east','ASAHI'];
+    let grandTotal=0;
+    stores.forEach((s,i)=>{
+      const mins=d.byStore[s]||0;
+      grandTotal+=mins;
+      document.getElementById('sm'+i).textContent=fmtMin(mins);
+      const sk=d.byStoreKubun&&d.byStoreKubun[s];
+      document.getElementById('sm'+i+'s').textContent='仕込 '+fmtMin(sk?sk.shikomi:0);
+      document.getElementById('sm'+i+'e').textContent='営業 '+fmtMin(sk?sk.eigyo:0);
+    });
+    document.getElementById('smTotal').textContent=fmtMin(grandTotal);
+
+    const body=document.getElementById('sumEmpBody');
+    const keys=Object.keys(d.byEmp||{});
+    if(!keys.length){ body.innerHTML='<div class="empty">この期間の打刻データはありません</div>'; return; }
+    const sidx={'本店':0,'east':1,'ASAHI':2};
+    let h='<div class="tbl-wrap"><table><thead><tr><th>氏名</th><th>店舗</th><th>出勤日数</th><th>仕込</th><th>営業</th><th>通し</th><th>合計</th></tr></thead><tbody>';
+    keys.sort((a,b)=>{
+      const sa=sidx[d.byEmp[a].store]??9, sb=sidx[d.byEmp[b].store]??9;
+      return sa-sb || d.byEmp[a].name.localeCompare(d.byEmp[b].name,'ja');
+    }).forEach(k=>{
+      const v=d.byEmp[k];
+      const si=sidx[v.store]??0;
+      h+=`<tr>
+        <td><strong>${v.name}</strong></td>
+        <td><span class="badge b-s${si}">${v.store||'--'}</span></td>
+        <td style="text-align:center">${v.days}日</td>
+        <td>${fmtMin(v.shikomi)}</td>
+        <td>${fmtMin(v.eigyo)}</td>
+        <td>${fmtMin(v.tooshi||0)}</td>
+        <td><strong>${fmtMin(v.total)}</strong></td>
+      </tr>`;
+    });
+    body.innerHTML=h+'</tbody></table></div>';
+  }catch(e){ toast('取得失敗: '+e.message, 'err'); }
+  finally{ hideLoading(); }
+}
+
+// ---- 記録（退勤は丸め時刻を優先表示）----
+async function loadLog(){
+  const date  =document.getElementById('logDate').value;
+  const store =document.getElementById('logStore').value;
+  const kubun =document.getElementById('logKubun').value;
+  showLoading();
+  try{
+    const d=await api('getRecords',{date,store,kubun});
+    const recs=d.records||[];
+    if(!recs.length){ document.getElementById('logBody').innerHTML='<div class="empty">打刻データがありません</div>'; return; }
+    const sidx={'本店':0,'east':1,'ASAHI':2};
+    let h='<div class="tbl-wrap"><table><thead><tr><th>氏名</th><th>店舗</th><th>区分</th><th>出勤</th><th>退勤</th><th>時間</th><th></th></tr></thead><tbody>';
+    recs.slice().reverse().forEach(r=>{
+      const si=sidx[r.store]??0;
+      const fix=r.fixed?`<span class="badge b-fixed">修正</span>`:'';
+      // 丸め時刻を優先表示、なければ実打刻
+      const dispIn  = r.roundedIn  || r.in  || '--';
+      const dispOut = r.roundedOut || r.out || '';
+      h+=`<tr>
+        <td><strong>${r.empName}</strong></td>
+        <td><span class="badge b-s${si}">${r.store}</span></td>
+        <td><span class="badge ${r.kubun==='仕込'?'b-shikomi':r.kubun==='通し'?'b-tooshi':'b-eigyo'}">${r.kubun}</span></td>
+        <td class="td-time">${dispIn}</td>
+        <td class="td-time">${dispOut ? dispOut : '<span class="badge b-open">出勤中</span>'}</td>
+        <td class="td-time">${dispOut ? fmtMin(r.roundedMinutes != null ? r.roundedMinutes : r.minutes) : '-'} ${fix}</td>
+        <td><button class="icon-btn" style="font-size:12px;padding:8px 14px" onclick="openEdit('${r.id}','${r.empName}','${r.in}','${r.out||''}')">修正</button></td>
+      </tr>`;
+    });
+    document.getElementById('logBody').innerHTML=h+'</tbody></table></div>';
+  }catch(e){ toast('取得失敗: '+e.message, 'err'); }
+  finally{ hideLoading(); }
+}
+
+// ---- 修正モーダル ----
+
+// GASのroundTime()と同じロジックをJS側でも実装
+function calcRoundTime(timeStr, unit, method) {
+  const u = Number(unit || 0);
+  if (!u || !method || method === 'none') return timeStr;
+  const parts = String(timeStr).split(':').map(Number);
+  const totalMins = parts[0] * 60 + (parts[1] || 0);
+  let rounded;
+  if (method === 'ceil')  rounded = Math.ceil(totalMins  / u) * u;
+  if (method === 'floor') rounded = Math.floor(totalMins / u) * u;
+  if (method === 'round') rounded = Math.round(totalMins / u) * u;
+  rounded = Math.max(0, Math.min(rounded, 23 * 60 + 59));
+  const h = Math.floor(rounded / 60);
+  const m = rounded % 60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':00';
+}
+
+function openEdit(id,name,inT,outT){
+  editId=id;
+  document.getElementById('editBody').innerHTML=`
+    <p style="font-size:13px;color:var(--mu);margin-bottom:8px"><strong>${name}</strong> の打刻を修正</p>
+    <label>出勤時刻（実打刻）</label><input type="time" id="eIn" value="${inT||''}" step="60"/>
+    <label>退勤時刻（実打刻）</label><input type="time" id="eOut" value="${outT||''}" step="60"/>
+    <label>修正メモ</label><input type="text" id="eMemo" placeholder="修正理由（任意）"/>
+  `;
+  document.getElementById('editModal').classList.add('on');
+}
+
+async function submitEdit(){
+  const inV  = document.getElementById('eIn').value;
+  const outV = document.getElementById('eOut').value;
+  const memo = document.getElementById('eMemo').value;
+  const roundedIn  = inV  ? calcRoundTime(inV,  roundSettings.inUnit,  roundSettings.inMethod)  : undefined;
+  const roundedOut = outV ? calcRoundTime(outV, roundSettings.outUnit, roundSettings.outMethod) : undefined;
+  showLoading();
+  try{
+    await api('updateRecord', {
+      id: editId,
+      in:  inV  || undefined,
+      out: outV || undefined,
+      roundedIn,
+      roundedOut,
+      memo,
+    });
+    toast('修正しました'); closeModal('editModal'); loadLog();
+  }catch(e){ toast('修正失敗: '+e.message, 'err'); }
+  finally{ hideLoading(); }
+}
+async function deleteRec(){
+  if(!confirm('この打刻を削除しますか？')) return;
+  showLoading();
+  try{
+    await api('deleteRecord',{id:editId});
+    toast('削除しました'); closeModal('editModal'); loadLog();
+  }catch(e){ toast('削除失敗: '+e.message, 'err'); }
+  finally{ hideLoading(); }
+}
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
+
+// ---- 月次CSV ----
+function setThisPeriod(){
+  const s=currentShift();
+  document.getElementById('csvFrom').value=s.from;
+  document.getElementById('csvTo').value=s.to;
+}
+async function dlCsv(){
+  const from=document.getElementById('csvFrom').value;
+  const to  =document.getElementById('csvTo').value;
+  if(!from||!to){ toast('期間を入力してください'); return; }
+  const info=document.getElementById('csvInfo');
+  info.textContent='生成中...';
+  showLoading();
+  try{
+    const d=await api('getMonthlyCsv',{from,to});
+    info.textContent=`${d.rowCount}名分のデータを出力しました（${from} 〜 ${to}）`;
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([d.csv],{type:'text/csv'}));
+    a.download=`ひよこ勤怠_${from}_${to}.csv`;
+    a.click();
+    toast('CSVをダウンロードしました');
+  }catch(e){ info.textContent=''; toast('出力失敗: '+e.message, 'err'); }
+  finally{ hideLoading(); }
+}
+
+// ---- 個人勤務履歴 ----
+function initHistoryTab(){
+  const sel=document.getElementById('histEmp');
+  const curVal=sel.value;
+  sel.innerHTML='<option value="">スタッフを選択</option>';
+  allEmployees.forEach(e=>{
+    const retired=e.retireDate&&e.retireDate<=today();
+    const label=e.name+(retired?' (退職)':'');
+    sel.innerHTML+=`<option value="${e.mgmtNo}">${label}</option>`;
+  });
+  if(curVal) sel.value=curVal;
+  if(!document.getElementById('histFrom').value) setHistThisPeriod();
+  if(sel.value) loadHistory();
+}
+
+function setHistThisPeriod(){
+  const d=new Date(), y=d.getFullYear(), m=d.getMonth()+1;
+  const pm=m===1?12:m-1, py=m===1?y-1:y;
+  document.getElementById('histFrom').value=`${py}-${String(pm).padStart(2,'0')}-21`;
+  document.getElementById('histTo').value=`${y}-${String(m).padStart(2,'0')}-20`;
+  loadHistory();
+}
+
+function shiftHistPeriod(dir){
+  const from=document.getElementById('histFrom').value;
+  if(!from) { setHistThisPeriod(); return; }
+  const d=new Date(from);
+  d.setMonth(d.getMonth()+dir);
+  const y1=d.getFullYear(), m1=d.getMonth()+1;
+  const d2=new Date(y1, m1, 20);
+  const y2=d2.getFullYear(), m2=d2.getMonth()+1;
+  document.getElementById('histFrom').value=`${y1}-${String(m1).padStart(2,'0')}-21`;
+  document.getElementById('histTo').value=`${y2}-${String(m2).padStart(2,'0')}-20`;
+  loadHistory();
+}
+
+async function loadHistory(){
+  const mgmtNo=document.getElementById('histEmp').value;
+  const from=document.getElementById('histFrom').value;
+  const to=document.getElementById('histTo').value;
+  const summary=document.getElementById('histSummary');
+  const body=document.getElementById('histBody');
+  if(!mgmtNo){ summary.style.display='none'; body.innerHTML='<div class="empty">スタッフを選択してください</div>'; return; }
+  if(!from||!to){ body.innerHTML='<div class="empty">期間を指定してください</div>'; return; }
+  showLoading();
+  try{
+    const d=await api('getRecords',{from,to});
+    const recs=(d.records||[]).filter(r=>String(r.mgmtNo)===String(mgmtNo));
+    if(!recs.length){
+      summary.style.display='none';
+      body.innerHTML='<div class="empty">この期間の打刻データはありません</div>';
+      return;
+    }
+    // サマリー計算
+    const dates=new Set();
+    let totalMins=0, shikomiMins=0, eigyoMins=0;
+    recs.forEach(r=>{
+      if(r.out){
+        const mins=(r.roundedMinutes!=null)?r.roundedMinutes:(r.minutes||0);
+        totalMins+=mins;
+        if(r.kubun==='仕込') shikomiMins+=mins; else eigyoMins+=mins;
+      }
+      dates.add(r.date);
+    });
+    summary.style.display='block';
+    document.getElementById('histDays').textContent=dates.size+'日';
+    document.getElementById('histShikomi').textContent=fmtMin(shikomiMins);
+    document.getElementById('histEigyo').textContent=fmtMin(eigyoMins);
+    document.getElementById('histTotal').textContent=fmtMin(totalMins);
+
+    // テーブル
+    const sidx={'本店':0,'east':1,'ASAHI':2};
+    let h='<div class="tbl-wrap"><table><thead><tr><th>日付</th><th>店舗</th><th>区分</th><th>出勤</th><th>退勤</th><th>時間</th></tr></thead><tbody>';
+    recs.sort((a,b)=>b.date.localeCompare(a.date)||String(b.in||'').localeCompare(String(a.in||'')));
+    recs.forEach(r=>{
+      const si=sidx[r.store]??0;
+      const dispIn=r.roundedIn||r.in||'--';
+      const dispOut=r.roundedOut||r.out||'';
+      const mins=dispOut?(r.roundedMinutes!=null?r.roundedMinutes:r.minutes):null;
+      h+=`<tr>
+        <td><strong>${r.date}</strong></td>
+        <td><span class="badge b-s${si}">${r.store}</span></td>
+        <td><span class="badge ${r.kubun==='仕込'?'b-shikomi':r.kubun==='通し'?'b-tooshi':'b-eigyo'}">${r.kubun}</span></td>
+        <td class="td-time">${dispIn}</td>
+        <td class="td-time">${dispOut?dispOut:'<span class="badge b-open">出勤中</span>'}</td>
+        <td class="td-time">${mins!=null?fmtMin(mins):'-'}</td>
+      </tr>`;
+    });
+    body.innerHTML=h+'</tbody></table></div>';
+  }catch(e){ body.innerHTML='<div class="empty">取得失敗: '+e.message+'</div>'; }
+  finally{ hideLoading(); }
+}
+
+// ---- 従業員マスタ管理 ----
+function renderMaster(){
+  api('getEmployees').then(d=>{
+    empRows=(d.employees||[]);
+    renderEmpList();
+  }).catch(()=>{ empRows=[...employees]; renderEmpList(); });
+}
+
+function renderEmpList(){
+  const list=document.getElementById('empMgrList');
+  list.innerHTML='';
+  empRows.forEach((e,i)=>{
+    const row=document.createElement('div');
+    row.className='emp-mgr-row';
+    const storeOpts=STORES.map(s=>`<option value="${s}" ${e.store===s?'selected':''}>${s}</option>`).join('');
+    row.innerHTML=`
+      <span class="mgmt-no-badge">${e.mgmtNo||'--'}</span>
+      <input class="nm"        type="text" value="${e.name||''}"   placeholder="氏名"    onchange="empRows[${i}].name=this.value"/>
+      <input class="kana-inp"  type="text" value="${e.kana||''}"   placeholder="よみ"    onchange="empRows[${i}].kana=this.value"/>
+      <input class="empno-inp" type="text" value="${e.empNo||''}"  placeholder="社員番号" onchange="empRows[${i}].empNo=this.value"/>
+      <select class="store-sel" onchange="empRows[${i}].store=this.value">
+        <option value="">店舗</option>${storeOpts}
+      </select>
+      <select class="emptype-sel" onchange="empRows[${i}].empType=this.value">
+        <option value="正社員" ${e.empType==='正社員'?'selected':''}>正社員</option>
+        <option value="アルバイト" ${(e.empType||'アルバイト')==='アルバイト'?'selected':''}>アルバイト</option>
+      </select>
+      <input class="date-inp" type="date" value="${e.hireDate||''}" placeholder="入社日" onchange="empRows[${i}].hireDate=this.value"/>
+      <input class="date-inp${e.retireDate?' retired-set':''}" type="date" value="${e.retireDate||''}" placeholder="退職日" onchange="empRows[${i}].retireDate=this.value;this.classList.toggle('retired-set',!!this.value)"/>
+      <button class="del-btn" onclick="delEmpRow(${i})">削除</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function addEmpRow(){
+  const nums=empRows.map(e=>parseInt(e.mgmtNo)).filter(n=>!isNaN(n)&&n>=1001);
+  const next=nums.length>0?Math.max(...nums)+1:1001;
+  empRows.push({mgmtNo:String(next),name:'',kana:'',empNo:'',store:STORES[curStore]||'',empType:'アルバイト'});
+  renderEmpList();
+}
+function delEmpRow(i){ if(!confirm(empRows[i].name+'を削除しますか？'))return; empRows.splice(i,1); renderEmpList(); }
+
+async function saveEmps(){
+  showLoading();
+  try{
+    await api('saveEmployees',{employees:empRows});
+    employees=empRows.filter(e=>!e.store||e.store===STORES[curStore]);
+    toast('従業員マスタを保存しました');
+    renderEmpGrid();
+  }catch(e){ toast('保存失敗: '+e.message, 'err'); }
+  finally{ hideLoading(); }
+}
+
+// ---- Init ----
+loadRoundSettings();
+initStore();
+
+// 出勤状況パネルとopenRecsの自動更新（60秒ごと）
+setInterval(async () => {
+  if(curTab !== 'punch' || curStore < 0) return;
+  try{
+    const d = await api('getOpenRecords',{store:STORES[curStore]});
+    openRecs = {};
+    (d.openRecords||[]).forEach(r=>{openRecs[r.mgmtNo]={id:r.id, kubun:r.kubun, inTime:r.inTime, roundedIn:r.roundedIn, store:r.store||''};});
+    renderEmpGrid();
+    loadAttendPanel();
+  }catch(e){}
+}, 60000);
+</script>
+</body>
+</html>
