@@ -804,6 +804,16 @@ async function api(action, body={}) {
         await sb.from('employees').delete().eq('mgmt_no',mno);
       }
     }
+    // 社員番号・氏名を過去の打刻記録にも反映
+    for(const e of emps){
+      if(!e.mgmtNo) continue;
+      const upd = {};
+      if(e.empNo) upd.employee_no = e.empNo;
+      if(e.name)  upd.employee_name = e.name;
+      if(Object.keys(upd).length){
+        await sb.from('time_records').update(upd).eq('mgmt_no', e.mgmtNo);
+      }
+    }
     return {ok:true};
   }
 
