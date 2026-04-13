@@ -434,6 +434,7 @@ td.td-time{white-space:nowrap;}
           <option value="">全区分</option>
           <option>仕込</option><option>営業</option><option>通し</option>
         </select>
+        <input type="text" id="logSearch" placeholder="氏名で検索..." oninput="filterLogList()" style="font-size:13px;padding:6px 10px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);width:140px;"/>
         <button class="icon-btn" onclick="loadLog()">更新</button>
       </div>
       <div id="logBody"></div>
@@ -530,6 +531,9 @@ td.td-time{white-space:nowrap;}
   <div id="view-master" style="display:none">
     <div class="card">
       <div class="card-lbl">従業員マスタ（全店舗共通）</div>
+      <div style="margin-bottom:10px">
+        <input type="text" id="masterSearch" placeholder="氏名で検索..." oninput="filterMasterList()" style="font-size:13px;padding:7px 12px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);width:200px;"/>
+      </div>
       <div class="mgr-header">
         <span style="min-width:44px">管理番号</span>
         <span style="flex:1">氏名</span>
@@ -1544,7 +1548,8 @@ async function loadLog(){
     recs.slice().reverse().forEach(r=>{
       const si=sidx[r.store]??0;
       const fix=r.fixed?`<span class="badge b-fixed">修正</span>`:'';
-      const mins = (r.in && r.out) ? calcMinutes(r.in, r.out) : null;
+      const rd = applyRounding({in:r.in, out:r.out});
+      const mins = rd.dispMinutes;
       h+=`<tr>
         <td><strong>${r.empName}</strong></td>
         <td><span class="badge b-s${si}">${r.store}</span></td>
@@ -1576,6 +1581,15 @@ function calcRoundTime(timeStr, unit, method) {
   const h = Math.floor(rounded / 60);
   const m = rounded % 60;
   return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':00';
+}
+
+function filterLogList(){
+  const q = (document.getElementById('logSearch').value||'').trim().toLowerCase();
+  const rows = document.querySelectorAll('#logBody table tbody tr');
+  rows.forEach(row=>{
+    const name = (row.querySelector('td strong')||{}).textContent||'';
+    row.style.display = (!q || name.toLowerCase().includes(q)) ? '' : 'none';
+  });
 }
 
 function openEdit(id,name,inT,outT){
@@ -1774,13 +1788,27 @@ function renderEmpList(){
   });
 }
 
+function filterMasterList(){
+  const q = (document.getElementById('masterSearch').value||'').trim().toLowerCase();
+  const rows = document.getElementById('empMgrList').children;
+  for(let i=0;i<rows.length;i++){
+    const name = (empRows[i]&&empRows[i].name||'').toLowerCase();
+    rows[i].style.display = (!q || name.includes(q)) ? '' : 'none';
+  }
+}
+
 function addEmpRow(){
   const nums=empRows.map(e=>parseInt(e.mgmtNo)).filter(n=>!isNaN(n)&&n>=1001);
   const next=nums.length>0?Math.max(...nums)+1:1001;
   empRows.push({mgmtNo:String(next),name:'',kana:'',empNo:'',store:STORES[curStore]||'',empType:'アルバイト'});
   renderEmpList();
 }
-function delEmpRow(i){ if(!confirm(empRows[i].name+'を削除しますか？'))return; empRows.splice(i,1); renderEmpList(); }
+function delEmpRow(i){
+  const pw = prompt(empRows[i].name+'を削除します。パスワードを入力してください：');
+  if(pw===null) return;
+  if(pw!=='hiyoko'){ toast('パスワードが違います','err'); return; }
+  empRows.splice(i,1); renderEmpList();
+}
 
 async function saveEmps(){
   showLoading();
