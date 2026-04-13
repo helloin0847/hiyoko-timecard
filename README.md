@@ -3,75 +3,94 @@
 ## プロジェクト概要
 
 kitchen ひよこ（本店・east・ASAHI）3店舗共通のタイムカードシステム。
-Google Apps Script（GAS）+ HTMLで動作するWebアプリ。
+Supabase + 単一HTMLファイルで動作する静的Webアプリ。GitHub Pagesでホスティング。
 
 ## ファイル構成
 
 ```
 hiyoko-timecard/
-├── Code.gs       # GASバックエンド（スプレッドシート操作・API）
-├── index.html    # フロントエンド（打刻UI・集計・設定）
-└── README.md     # このファイル
+├── index.html                    # フロントエンド（打刻UI・集計・設定・Supabase接続）
+├── Code.gs                       # 旧GASバックエンド（リファレンス用・未使用）
+├── .github/workflows/deploy.yml  # GitHub Pages自動デプロイ
+├── .gitignore
+└── README.md
 ```
 
-## デプロイ先
+## デプロイ・公開URL
 
-- Google Apps Script プロジェクト
-- スプレッドシートにバインドされたコンテナバインド型
+- **ホスティング**: GitHub Pages（masterブランチへのpushで自動デプロイ）
+- **リポジトリ**: https://github.com/helloin0847/hiyoko-timecard
 
-## スプレッドシート構成
+### 各店舗ブックマークURL
 
-### 従業員マスタシート（`従業員マスタ`）
-| 列 | フィールド |
-|----|-----------|
-| A  | 管理番号 |
-| B  | 氏名 |
-| C  | 読み仮名 |
-| D  | 社員番号 |
-| E  | ソート順 |
-| F  | 有効 |
-| G  | 店舗 |
-| H  | 入社日 |
-| I  | 退職日 |
-| J  | 雇用形態（正社員/アルバイト）|
+| 店舗 | URL |
+|------|-----|
+| 本店 | `https://helloin0847.github.io/hiyoko-timecard/?store=本店` |
+| east | `https://helloin0847.github.io/hiyoko-timecard/?store=east` |
+| ASAHI | `https://helloin0847.github.io/hiyoko-timecard/?store=ASAHI` |
 
-### 打刻記録シート（`打刻記録`）
-| 列 | フィールド |
-|----|-----------|
-| A  | ID（UUID）|
-| B  | 日付 |
-| C  | 管理番号 |
-| D  | 氏名 |
-| E  | 店舗 |
-| F  | 区分（仕込/営業）|
-| G  | 出勤時刻（実打刻）|
-| H  | 退勤時刻（実打刻）|
-| I  | 勤務分数（実）|
-| J  | 修正フラグ |
-| K  | 修正メモ |
-| L  | 社員番号 |
-| M  | 丸め出勤 |
-| N  | 丸め退勤 |
-| O  | 丸め分数 |
-| P  | 削除フラグ |
+## バックエンド（Supabase）
 
-## APIアクション一覧
+- **プロジェクト**: `cenigdvpcxphljrravnb`（ap-northeast-1）
+- **スキーマ**: `hiyoko_timecard`
+- **接続**: Supabase JS v2（CDN）、anonキーで直接接続
 
-| action | 説明 |
-|--------|------|
-| `getEmployees` | 従業員マスタ取得 |
-| `saveEmployees` | 従業員マスタ保存 |
-| `punchIn` | 出勤打刻 |
-| `punchOut` | 退勤打刻 |
-| `getOpenRecords` | 出勤中レコード取得 |
-| `getRecords` | 打刻記録取得（フィルタ対応）|
-| `updateRecord` | 打刻修正（丸め再計算含む）|
-| `deleteRecord` | 打刻削除 |
-| `getDailySummary` | 日次集計 |
-| `getShiftSummary` | シフト期間集計 |
-| `getCalendarData` | 勤務表用データ取得 |
-| `getMonthlyCsv` | 月次CSV出力（FileMaker連携）|
-| `cleanupDeleted` | ソフトデリート済み行の物理削除 |
+### テーブル構成
+
+#### `hiyoko_timecard.employees`（従業員マスタ）
+
+| カラム | 型 | 説明 |
+|--------|-----|------|
+| id | BIGINT (IDENTITY) | PK |
+| mgmt_no | TEXT (UNIQUE) | 管理番号 |
+| name | TEXT | 氏名 |
+| name_kana | TEXT | 読み仮名（ひらがな・苗字のみ）|
+| employee_no | TEXT | 社員番号（給与システム用）|
+| sort_order | INT | ソート順 |
+| is_active | BOOLEAN | 有効フラグ |
+| store | TEXT | 店舗（本店/east/ASAHI）|
+| hire_date | DATE | 入社日 |
+| retire_date | DATE | 退職日 |
+| employment_type | TEXT | 雇用形態（正社員/アルバイト）|
+| created_at | TIMESTAMPTZ | 作成日時 |
+| updated_at | TIMESTAMPTZ | 更新日時（トリガー自動更新）|
+
+#### `hiyoko_timecard.time_records`（打刻記録）
+
+| カラム | 型 | 説明 |
+|--------|-----|------|
+| id | UUID (DEFAULT gen_random_uuid()) | PK |
+| date | DATE | 日付 |
+| mgmt_no | TEXT (FK → employees) | 管理番号 |
+| employee_name | TEXT | 氏名（非正規化）|
+| store | TEXT | 店舗 |
+| kubun | TEXT | 区分（仕込/営業/通し）|
+| clock_in_raw | TIME | 出勤時刻（実打刻）|
+| clock_out_raw | TIME | 退勤時刻（実打刻）|
+| work_minutes_raw | INT | 勤務分数（実）|
+| is_corrected | BOOLEAN | 修正フラグ |
+| correction_memo | TEXT | 修正メモ |
+| employee_no | TEXT | 社員番号 |
+| clock_in_rounded | TIME | 丸め出勤 |
+| clock_out_rounded | TIME | 丸め退勤 |
+| work_minutes_rounded | INT | 丸め分数 |
+| is_deleted | BOOLEAN | 削除フラグ（論理削除）|
+| created_at | TIMESTAMPTZ | 作成日時 |
+| updated_at | TIMESTAMPTZ | 更新日時（トリガー自動更新）|
+
+## 機能一覧
+
+| 機能 | 説明 |
+|------|------|
+| 打刻 | 出勤・退勤の打刻（確認モーダル付き・楽観的UI更新）|
+| 出勤状況パネル | 正社員（通し）・各店舗の出勤中スタッフ一覧 |
+| モード切替 | 仕込/営業モード（16時で自動切替・手動切替可）|
+| 集計 | シフト期間の店舗別・従業員別勤務時間集計 |
+| 記録 | 日別の打刻記録一覧・修正・削除 |
+| 月次CSV | FileMaker・PCA給与DX連携用CSV出力 |
+| 個人履歴 | スタッフ別の勤務履歴・サマリー |
+| スタッフマスタ | 従業員の登録・編集・削除（upsert方式）|
+| 丸め設定 | 出勤・退勤の丸め（分単位・切上/切捨/四捨五入）|
 
 ## 主な仕様
 
@@ -79,13 +98,17 @@ hiyoko-timecard/
 - 給与支払日：締め日+6日
 - 丸め設定：出勤・退勤それぞれ独立（分単位・切上/切捨/四捨五入）
 - 区分：仕込（〜15:59自動）/ 営業（16:00〜自動）、手動切替可
+- 正社員は「通し」区分で全店舗に表示
 - 集計は丸め分数優先、なければ実分数を使用
-- CSVはFileMaker・PCA給与DX連携用（社員番号・時間は小数形式）
+- CSVはFileMaker・PCA給与DX連携用（社員番号・時間は小数形式・正社員除外）
+- 従業員保存はupsert方式（FK制約のある従業員は削除せずis_active=falseで無効化）
 
-## 丸め設定の保存場所
+## クライアント側の保存データ
 
-- `localStorage` キー：`hiyoko_round`
-- 各iPadのブラウザに個別保存（全店舗共通設定ではない）
+| キー | 保存先 | 説明 |
+|------|--------|------|
+| `hiyoko_round` | localStorage | 丸め設定（各iPadごと）|
+| `hiyoko_store` | localStorage | 最後に選択した店舗 |
 
 ## URLパラメータ
 
@@ -93,10 +116,12 @@ hiyoko-timecard/
 |-----------|-----|------|
 | `?store=本店` | 本店/east/ASAHI | 店舗固定（iPad用ブックマーク）|
 
-## 開発メモ
+## 開発・更新手順
 
-- GASの `google.script.run` を使用（fetchではない）
-- HTMLはGASテンプレートとして `doGet()` で返す
-- `<?= store ?>` でGASからHTMLに店舗名を埋め込む想定
-- ダークモード対応済み（CSS変数 + `prefers-color-scheme`）
-- 現バージョン：v8
+```bash
+# コード編集後
+git add index.html
+git commit -m "変更内容の説明"
+git push
+# → GitHub Pagesに自動デプロイ（約30秒）
+```
