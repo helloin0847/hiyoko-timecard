@@ -82,7 +82,7 @@ button{font-family:var(--font);cursor:pointer;}
 
 .tabs{display:flex;gap:3px;background:rgba(0,0,0,0.06);border-radius:var(--rad-s);padding:3px;margin-bottom:14px;}
 @media(prefers-color-scheme:dark){.tabs{background:rgba(255,255,255,0.06);}}
-@media(max-width:1200px){#tab-summary,#tab-log,#tab-monthly,#tab-history,#tab-setting{display:none !important;}}
+@media(max-width:1200px){#tab-summary,#tab-log,#tab-monthly,#tab-history,#tab-attendance,#tab-setting{display:none !important;}}
 .tab{flex:1;padding:7px 4px;font-size:12px;font-weight:500;text-align:center;border-radius:5px;border:none;background:transparent;color:var(--mu);}
 .tab.on{background:var(--sur);color:var(--tx);box-shadow:0 0 0 0.5px var(--bd2);}
 
@@ -263,6 +263,31 @@ td.td-time{white-space:nowrap;}
 .round-item input[type=number]{width:60px;font-size:13px;padding:6px 8px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);}
 .round-item select{font-size:12px;padding:6px 8px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
 .round-unit-lbl{font-size:12px;color:var(--mu);}
+
+/* ===== 勤怠一覧 ===== */
+.att-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.att-table{border-collapse:collapse;font-size:11px;white-space:nowrap;min-width:100%;}
+.att-table th,.att-table td{border:1px solid var(--bd);padding:2px 4px;text-align:center;vertical-align:middle;}
+.att-table thead th{background:var(--bg);font-weight:600;position:sticky;top:0;z-index:2;}
+.att-name-cell{position:sticky;left:0;z-index:3;background:var(--sur);text-align:left !important;font-weight:600;min-width:90px;max-width:120px;padding-left:8px !important;}
+.att-table thead .att-name-cell{z-index:4;background:var(--bg);}
+.att-sat{color:var(--b60) !important;}
+.att-sun{color:var(--r60) !important;}
+.att-today{background:rgba(59,109,17,0.08);}
+.att-in{font-size:10px;color:var(--tx);}
+.att-out{font-size:10px;color:var(--tx);}
+.att-out-late{color:var(--r60);}
+.att-total-cell{position:sticky;right:0;z-index:3;background:var(--sur);font-weight:600;min-width:60px;border-left:2px solid var(--bd2);}
+.att-table thead .att-total-cell{z-index:4;background:var(--bg);}
+.att-month-hdr{background:var(--bg);font-weight:700;font-size:12px;}
+.att-filter-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+.att-filter-row .icon-btn{padding:6px 12px;}
+.att-store-badge{display:inline-block;font-size:9px;font-weight:600;padding:1px 5px;border-radius:100px;margin-left:4px;}
+
+/* ===== 丸め切替ボタン ===== */
+.round-toggle{font-size:10px;font-weight:600;padding:3px 8px;border-radius:100px;border:0.5px solid var(--bd2);cursor:pointer;transition:all .12s;margin-top:3px;display:inline-block;}
+.round-toggle.rt-on{background:var(--g50);border-color:var(--g60);color:var(--g80);}
+.round-toggle.rt-off{background:var(--bg);border-color:var(--bd2);color:var(--mu);}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -322,11 +347,13 @@ td.td-time{white-space:nowrap;}
       <button class="tab"     id="tab-log"     onclick="sw('log')">記録</button>
       <button class="tab"     id="tab-monthly" onclick="sw('monthly')">月次CSV</button>
       <button class="tab"     id="tab-history" onclick="sw('history')">履歴</button>
+      <button class="tab"     id="tab-attendance" onclick="sw('attendance')">勤怠一覧</button>
       <button class="tab"     id="tab-master"  onclick="sw('master')">スタッフ</button>
       <button class="tab"     id="tab-setting" onclick="sw('setting')">設定</button>
     </div>
     <div class="hdr-right" style="margin-left:12px">
       <div class="hdr-clock" id="clock">--:--:--</div>
+      <button class="round-toggle rt-on" id="roundToggle" onclick="toggleRounding()">丸め ON</button>
       <button class="store-change-btn" onclick="changeStore()">店舗変更</button>
     </div>
   </div>
@@ -477,6 +504,28 @@ td.td-time{white-space:nowrap;}
     </div>
   </div>
 
+  <!-- 勤怠一覧 -->
+  <div id="view-attendance" style="display:none">
+    <div class="card">
+      <div class="card-lbl">勤怠一覧</div>
+      <div class="att-filter-row">
+        <select id="attStore" onchange="loadAttendance()" style="font-size:13px;padding:6px 10px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);">
+          <option value="">全店舗</option>
+          <option value="本店">本店</option>
+          <option value="east">east</option>
+          <option value="ASAHI">ASAHI</option>
+        </select>
+        <button class="icon-btn" onclick="shiftAttPeriod(-1)">前シフト</button>
+        <button class="icon-btn" onclick="setAttThisPeriod()">今月</button>
+        <button class="icon-btn" onclick="shiftAttPeriod(1)">次シフト</button>
+        <span id="attPeriodLabel" style="font-size:12px;color:var(--mu);margin-left:4px;"></span>
+      </div>
+      <div class="att-wrap" id="attBody">
+        <div class="empty">データを読み込み中...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- 従業員マスタ -->
   <div id="view-master" style="display:none">
     <div class="card">
@@ -616,6 +665,7 @@ let editId    = '';
 
 // ---- 丸め設定 ----
 let roundSettings = { inUnit: 0, inMethod: 'none', outUnit: 0, outMethod: 'none' };
+let showRounded = true; // true=丸め時間表示, false=打刻時間表示
 
 function loadRoundSettings() {
   try {
@@ -632,6 +682,29 @@ function applyRoundSettingsToUI() {
   document.getElementById('rInMethod').value  = roundSettings.inMethod || 'none';
   document.getElementById('rOutUnit').value   = roundSettings.outUnit  || 0;
   document.getElementById('rOutMethod').value = roundSettings.outMethod|| 'none';
+}
+
+// rec = {in, out} (raw values)
+// 戻り値: {dispIn, dispOut, dispMinutes}
+function applyRounding(rec) {
+  const rs = roundSettings;
+  const rIn  = rec.in  ? roundTime(rec.in,  rs.inUnit,  rs.inMethod)  : '';
+  const rOut = rec.out ? roundTime(rec.out, rs.outUnit, rs.outMethod) : '';
+  const rMins = (rIn && rOut) ? calcMinutes(rIn, rOut) : null;
+  return { dispIn: rIn, dispOut: rOut, dispMinutes: rMins };
+}
+// showRounded に応じて表示用の値を返す
+function dispRec(rec) {
+  if (showRounded) return applyRounding(rec);
+  return { dispIn: rec.in||'', dispOut: rec.out||'', dispMinutes: (rec.in && rec.out) ? calcMinutes(rec.in, rec.out) : null };
+}
+function toggleRounding() {
+  showRounded = !showRounded;
+  const btn = document.getElementById('roundToggle');
+  btn.textContent = showRounded ? '丸め ON' : '丸め OFF';
+  btn.className = 'round-toggle ' + (showRounded ? 'rt-on' : 'rt-off');
+  // 現在のタブを再描画
+  sw(curTab);
 }
 
 function saveRoundSettings() {
@@ -748,16 +821,15 @@ async function api(action, body={}) {
     }
     const dateStr = todayJST();
     const actualIn = timeJST();
-    const roundedIn = roundTime(actualIn, body.roundInUnit, body.roundInMethod);
     const row = {
       date:dateStr, mgmt_no:body.mgmtNo, employee_name:body.empName,
       store:body.store, kubun:body.kubun,
-      clock_in_raw:actualIn, clock_in_rounded:roundedIn,
+      clock_in_raw:actualIn,
       employee_no:body.empNo||null,
     };
     const {data,error} = await sb.from('time_records').insert(row).select('id').single();
     if(error) throw new Error(error.message);
-    return {ok:true, id:data.id, time:actualIn, roundedTime:roundedIn, date:dateStr};
+    return {ok:true, id:data.id, time:actualIn, date:dateStr};
   }
 
   if (action === 'punchOut') {
@@ -769,17 +841,14 @@ async function api(action, body={}) {
     if(!rows||!rows.length) throw new Error('出勤記録が見つかりません');
     const r=rows[0];
     const actualOut = timeJST();
-    const roundedOut = roundTime(actualOut, body.roundOutUnit, body.roundOutMethod);
-    const roundedIn = r.clock_in_rounded || r.clock_in_raw;
     const actualMins = calcMinutes(r.clock_in_raw, actualOut);
-    const roundedMins = calcMinutes(roundedIn, roundedOut);
     const store = (r.kubun==='通し' && body.store) ? body.store : r.store;
     const {error:upErr} = await sb.from('time_records').update({
-      clock_out_raw:actualOut, clock_out_rounded:roundedOut,
-      work_minutes_raw:actualMins, work_minutes_rounded:roundedMins, store:store,
+      clock_out_raw:actualOut,
+      work_minutes_raw:actualMins, store:store,
     }).eq('id',r.id);
     if(upErr) throw new Error(upErr.message);
-    return {ok:true, time:actualOut, roundedTime:roundedOut, minutes:roundedMins};
+    return {ok:true, time:actualOut, inTime:r.clock_in_raw, minutes:actualMins};
   }
 
   if (action === 'getOpenRecords') {
@@ -791,7 +860,6 @@ async function api(action, body={}) {
       .map(r=>({
         id:r.id, date:r.date, mgmtNo:r.mgmt_no, empName:r.employee_name,
         store:r.store, kubun:r.kubun, inTime:r.clock_in_raw,
-        roundedIn:r.clock_in_rounded||'',
       }));
     return {ok:true, openRecords:open};
   }
@@ -828,13 +896,6 @@ async function api(action, body={}) {
       upd.clock_out_raw = body.out;
       upd.work_minutes_raw = calcMinutes(newIn, newOut);
     }
-    if(body.roundedIn) upd.clock_in_rounded = body.roundedIn;
-    if(body.roundedOut) upd.clock_out_rounded = body.roundedOut;
-    if(body.roundedIn || body.roundedOut) {
-      const rIn = body.roundedIn || cur.clock_in_rounded || newIn;
-      const rOut = body.roundedOut || cur.clock_out_rounded || newOut;
-      if(rIn && rOut) upd.work_minutes_rounded = calcMinutes(rIn, rOut);
-    }
     const {error:upErr} = await sb.from('time_records').update(upd).eq('id',body.id);
     if(upErr) throw new Error(upErr.message);
     return {ok:true};
@@ -853,7 +914,8 @@ async function api(action, body={}) {
     const byStore = {'本店':0,'east':0,'ASAHI':0};
     const byEmp = {};
     recs.forEach(r=>{
-      const mins = r.roundedMinutes!=null ? Number(r.roundedMinutes) : Number(r.minutes);
+      const dr = applyRounding({in:r.in, out:r.out});
+      const mins = dr.dispMinutes!=null ? dr.dispMinutes : Number(r.minutes);
       byStore[r.store] = (byStore[r.store]||0) + mins;
       const key = r.mgmtNo;
       if(!byEmp[key]) byEmp[key] = {name:r.empName,store:r.store,total:0,shikomi:0,eigyo:0,tooshi:0};
@@ -879,7 +941,8 @@ async function api(action, body={}) {
     };
     const byEmp = {};
     recs.forEach(r=>{
-      const mins = r.roundedMinutes!=null ? Number(r.roundedMinutes) : Number(r.minutes);
+      const dr = applyRounding({in:r.in, out:r.out});
+      const mins = dr.dispMinutes!=null ? dr.dispMinutes : Number(r.minutes);
       const store = r.store, kubun = r.kubun;
       byStore[store] = (byStore[store]||0)+mins;
       if(byStoreKubun[store]){
@@ -926,7 +989,8 @@ async function api(action, body={}) {
         eigyo:{'本店':0,'east':0,'ASAHI':0}, shikomi:{'本店':0,'east':0,'ASAHI':0},
       };
       const e=byEmp[key];
-      const mins = r.roundedMinutes!=null ? Number(r.roundedMinutes) : Number(r.minutes);
+      const dr = applyRounding({in:r.in, out:r.out});
+      const mins = dr.dispMinutes!=null ? dr.dispMinutes : Number(r.minutes);
       if(e.days[r.store]) e.days[r.store].add(r.date);
       if(r.kubun==='営業') e.eigyo[r.store]=(e.eigyo[r.store]||0)+mins;
       if(r.kubun==='仕込') e.shikomi[r.store]=(e.shikomi[r.store]||0)+mins;
@@ -1004,7 +1068,7 @@ async function enterMain(idx){
   try{
     const d=await api('getOpenRecords',{store:STORES[curStore]});
     openRecs={};
-    (d.openRecords||[]).forEach(r=>{openRecs[r.mgmtNo]={id:r.id, kubun:r.kubun, inTime:r.inTime, roundedIn:r.roundedIn, store:r.store||''};});
+    (d.openRecords||[]).forEach(r=>{openRecs[r.mgmtNo]={id:r.id, kubun:r.kubun, inTime:r.inTime, store:r.store||''};});
   }catch(e){}
   renderModeSwitch();
   renderEmpGrid();
@@ -1028,10 +1092,12 @@ function changeStore(){
 let curTab = 'punch';
 function sw(name){
   curTab = name;
-  ['punch','summary','log','monthly','history','master','setting'].forEach(t=>{
+  ['punch','summary','log','monthly','history','attendance','master','setting'].forEach(t=>{
     document.getElementById('view-'+t).style.display = t===name ? 'block' : 'none';
     document.getElementById('tab-'+t).classList.toggle('on', t===name);
   });
+  // 勤怠一覧タブは画面幅いっぱいに広げる
+  document.querySelector('.app').style.maxWidth = name==='attendance' ? 'none' : '1000px';
   if(name==='punch')   loadAttendPanel();
   if(name==='summary'){
     if(!document.getElementById('sumFrom').value) setSumThisPeriod();
@@ -1043,6 +1109,7 @@ function sw(name){
   }
   if(name==='monthly')  setThisPeriod();
   if(name==='history'){ initHistoryTab(); }
+  if(name==='attendance'){ initAttendanceTab(); }
   if(name==='master')   renderMaster();
   if(name==='setting')  applyRoundSettingsToUI();
 }
@@ -1138,7 +1205,7 @@ function renderAttendPanel(recs){
     }
     body.innerHTML = storeRecs.map(r => {
       const kubunCls = r.kubun === '仕込' ? 'kp-s' : 'kp-e';
-      const inTime = String(r.roundedIn || r.in || '').slice(0,5);
+      const inTime = String(r.in || '').slice(0,5);
       return `<div class="emp-attend-line">
         <span class="eal-name">${r.empName}</span>
         <span class="kp ${kubunCls}">${r.kubun}</span>
@@ -1159,7 +1226,7 @@ function renderAttendPanel(recs){
     return;
   }
   sBody.innerHTML = seishaRecs.map(r => {
-    const inTime = String(r.roundedIn || r.in || '').slice(0,5);
+    const inTime = String(r.in || '').slice(0,5);
     return `<div class="emp-attend-line">
       <span class="eal-name">${r.empName}</span>
       <span class="kp kp-t">通し</span>
@@ -1275,7 +1342,7 @@ function renderEmpGrid(){
     if(open){
       const pillCls = isOpenTooshi ? 'sp-t' : (isOpenShikomi ? 'sp-s' : 'sp-e');
       const kubunLabel = isOpenTooshi ? '通し' : openKubun;
-      const inDisp = String(open.roundedIn || open.inTime || '').slice(0,5);
+      const inDisp = String(open.inTime || '').slice(0,5);
       const storeNote = (isOpenTooshi && open.store && open.store !== STORES[curStore])
         ? `<span style="font-size:9px;color:var(--mu);margin-left:2px">(${open.store})</span>` : '';
       pill = `<span class="status-pill ${pillCls}">${kubunLabel} 出勤中</span>${storeNote}`
@@ -1349,16 +1416,15 @@ async function execPunch(){
 
   if(dir === 'in'){
     // 楽観的UI更新: API完了前にグリッドを即反映
-    openRecs[emp.mgmtNo] = { id:'_pending', kubun, inTime: nowStr, roundedIn:'', store: STORES[curStore] };
+    openRecs[emp.mgmtNo] = { id:'_pending', kubun, inTime: nowStr, store: STORES[curStore] };
     renderEmpGrid();
     toast(emp.name + ' ' + (kubun==='通し'?'通し':''+kubun) + ' 出勤 ' + nowStr);
     // APIをバックグラウンドで実行
     api('punchIn', {
       mgmtNo: emp.mgmtNo, empNo: emp.empNo, empName: emp.name,
       store: STORES[curStore], kubun,
-      roundInUnit: roundSettings.inUnit, roundInMethod: roundSettings.inMethod,
     }).then(d => {
-      openRecs[emp.mgmtNo] = { id: d.id, kubun, inTime: d.time, roundedIn: d.roundedTime, store: STORES[curStore] };
+      openRecs[emp.mgmtNo] = { id: d.id, kubun, inTime: d.time, store: STORES[curStore] };
       renderEmpGrid();
       loadAttendPanel().catch(()=>{});
     }).catch(e => {
@@ -1373,11 +1439,11 @@ async function execPunch(){
     toast(emp.name + ' 退勤 ' + nowStr);
     api('punchOut', {
       mgmtNo: emp.mgmtNo, store: STORES[curStore],
-      roundOutUnit: roundSettings.outUnit, roundOutMethod: roundSettings.outMethod,
     }).then(d => {
-      const dispTime = (roundSettings.outUnit && roundSettings.outMethod !== 'none')
-        ? d.time + ' → ' + d.roundedTime : d.time;
-      toast(emp.name + ' 退勤 ' + dispTime + ' ' + fmtMin(d.minutes));
+      const rd = applyRounding({in:d.inTime, out:d.time});
+      const dispTime = (showRounded && roundSettings.outUnit && roundSettings.outMethod !== 'none')
+        ? d.time + ' → ' + rd.dispOut.slice(0,5) : d.time;
+      toast(emp.name + ' 退勤 ' + dispTime + ' ' + fmtMin(rd.dispMinutes));
       loadAttendPanel().catch(()=>{});
     }).catch(e => {
       if(prevOpen) openRecs[emp.mgmtNo] = prevOpen;
@@ -1468,16 +1534,14 @@ async function loadLog(){
     recs.slice().reverse().forEach(r=>{
       const si=sidx[r.store]??0;
       const fix=r.fixed?`<span class="badge b-fixed">修正</span>`:'';
-      // 丸め時刻を優先表示、なければ実打刻
-      const dispIn  = r.roundedIn  || r.in  || '--';
-      const dispOut = r.roundedOut || r.out || '';
+      const mins = (r.in && r.out) ? calcMinutes(r.in, r.out) : null;
       h+=`<tr>
         <td><strong>${r.empName}</strong></td>
         <td><span class="badge b-s${si}">${r.store}</span></td>
         <td><span class="badge ${r.kubun==='仕込'?'b-shikomi':r.kubun==='通し'?'b-tooshi':'b-eigyo'}">${r.kubun}</span></td>
-        <td class="td-time">${dispIn}</td>
-        <td class="td-time">${dispOut ? dispOut : '<span class="badge b-open">出勤中</span>'}</td>
-        <td class="td-time">${dispOut ? fmtMin(r.roundedMinutes != null ? r.roundedMinutes : r.minutes) : '-'} ${fix}</td>
+        <td class="td-time">${r.in || '--'}</td>
+        <td class="td-time">${r.out ? r.out : '<span class="badge b-open">出勤中</span>'}</td>
+        <td class="td-time">${mins!=null ? fmtMin(mins) : '-'} ${fix}</td>
         <td><button class="icon-btn" style="font-size:12px;padding:8px 14px" onclick="openEdit('${r.id}','${r.empName}','${r.in}','${r.out||''}')">修正</button></td>
       </tr>`;
     });
@@ -1519,16 +1583,12 @@ async function submitEdit(){
   const inV  = document.getElementById('eIn').value;
   const outV = document.getElementById('eOut').value;
   const memo = document.getElementById('eMemo').value;
-  const roundedIn  = inV  ? calcRoundTime(inV,  roundSettings.inUnit,  roundSettings.inMethod)  : undefined;
-  const roundedOut = outV ? calcRoundTime(outV, roundSettings.outUnit, roundSettings.outMethod) : undefined;
   showLoading();
   try{
     await api('updateRecord', {
       id: editId,
       in:  inV  || undefined,
       out: outV || undefined,
-      roundedIn,
-      roundedOut,
       memo,
     });
     toast('修正しました'); closeModal('editModal'); loadLog();
@@ -1629,7 +1689,8 @@ async function loadHistory(){
     let totalMins=0, shikomiMins=0, eigyoMins=0;
     recs.forEach(r=>{
       if(r.out){
-        const mins=(r.roundedMinutes!=null)?r.roundedMinutes:(r.minutes||0);
+        const dr=applyRounding({in:r.in, out:r.out});
+        const mins=dr.dispMinutes!=null?dr.dispMinutes:(r.minutes||0);
         totalMins+=mins;
         if(r.kubun==='仕込') shikomiMins+=mins; else eigyoMins+=mins;
       }
@@ -1647,16 +1708,14 @@ async function loadHistory(){
     recs.sort((a,b)=>b.date.localeCompare(a.date)||String(b.in||'').localeCompare(String(a.in||'')));
     recs.forEach(r=>{
       const si=sidx[r.store]??0;
-      const dispIn=r.roundedIn||r.in||'--';
-      const dispOut=r.roundedOut||r.out||'';
-      const mins=dispOut?(r.roundedMinutes!=null?r.roundedMinutes:r.minutes):null;
+      const dr=dispRec({in:r.in, out:r.out});
       h+=`<tr>
         <td><strong>${r.date}</strong></td>
         <td><span class="badge b-s${si}">${r.store}</span></td>
         <td><span class="badge ${r.kubun==='仕込'?'b-shikomi':r.kubun==='通し'?'b-tooshi':'b-eigyo'}">${r.kubun}</span></td>
-        <td class="td-time">${dispIn}</td>
-        <td class="td-time">${dispOut?dispOut:'<span class="badge b-open">出勤中</span>'}</td>
-        <td class="td-time">${mins!=null?fmtMin(mins):'-'}</td>
+        <td class="td-time">${dr.dispIn||'--'}</td>
+        <td class="td-time">${dr.dispOut?dr.dispOut:'<span class="badge b-open">出勤中</span>'}</td>
+        <td class="td-time">${dr.dispMinutes!=null?fmtMin(dr.dispMinutes):'-'}</td>
       </tr>`;
     });
     body.innerHTML=h+'</tbody></table></div>';
@@ -1724,6 +1783,145 @@ async function saveEmps(){
   finally{ hideLoading(); }
 }
 
+// ---- 勤怠一覧 ----
+let attFrom='', attTo='';
+function initAttendanceTab(){
+  if(!attFrom){
+    const s=currentShift();
+    attFrom=s.from; attTo=s.to;
+  }
+  loadAttendance();
+}
+function setAttThisPeriod(){
+  const s=currentShift();
+  attFrom=s.from; attTo=s.to;
+  loadAttendance();
+}
+function shiftAttPeriod(dir){
+  const d=new Date(attFrom);
+  d.setMonth(d.getMonth()+dir);
+  const y=d.getFullYear(), m=d.getMonth()+1;
+  attFrom=`${y}-${String(m).padStart(2,'0')}-21`;
+  const ny=m===12?y+1:y, nm=m===12?1:m+1;
+  attTo=`${ny}-${String(nm).padStart(2,'0')}-20`;
+  loadAttendance();
+}
+async function loadAttendance(){
+  const body=document.getElementById('attBody');
+  const label=document.getElementById('attPeriodLabel');
+  const storeFilter=document.getElementById('attStore').value;
+  label.textContent=attFrom.replace(/-/g,'/')+'〜'+attTo.replace(/-/g,'/');
+  showLoading();
+  try{
+    const [recD, empD] = await Promise.all([
+      api('getRecords',{from:attFrom,to:attTo}),
+      allEmployees.length ? {employees:allEmployees} : api('getEmployees')
+    ]);
+    const recs=recD.records||[];
+    const emps=(empD.employees||[]).filter(e=>{
+      if(e.retireDate && e.retireDate < attFrom) return false;
+      if(storeFilter && e.store!==storeFilter) return false;
+      return true;
+    }).sort((a,b)=>(a.store||'').localeCompare(b.store||'')||(a.sortOrder||0)-(b.sortOrder||0)||a.name.localeCompare(b.name));
+
+    // 日付配列を生成（ローカル日付で処理）
+    const dates=[];
+    {
+      const [sy,sm,sd]=attFrom.split('-').map(Number);
+      const [ey,em,ed]=attTo.split('-').map(Number);
+      const ds=new Date(sy,sm-1,sd);
+      const de=new Date(ey,em-1,ed);
+      for(let d=new Date(ds);d<=de;d.setDate(d.getDate()+1)){
+        const yy=d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+        dates.push(`${yy}-${mm}-${dd}`);
+      }
+    }
+    const dayNames=['日','月','火','水','木','金','土'];
+    const todayStr=todayJST();
+
+    // レコードをマッピング: mgmtNo → date → [{in, out, minutes}]
+    const map={};
+    recs.forEach(r=>{
+      if(!map[r.mgmtNo]) map[r.mgmtNo]={};
+      if(!map[r.mgmtNo][r.date]) map[r.mgmtNo][r.date]=[];
+      const dr=dispRec({in:r.in, out:r.out});
+      map[r.mgmtNo][r.date].push({in:dr.dispIn,out:dr.dispOut,minutes:dr.dispMinutes});
+    });
+
+    // 月ごとにグループ分け（ヘッダー用）
+    const monthGroups=[];
+    let curM='';
+    dates.forEach(d=>{
+      const m=parseInt(d.slice(5,7));
+      if(m+'月'!==curM){
+        curM=m+'月';
+        monthGroups.push({label:curM,count:0});
+      }
+      monthGroups[monthGroups.length-1].count++;
+    });
+
+    // テーブル構築
+    let h='<table class="att-table"><thead>';
+    // 月ヘッダー行
+    h+='<tr><th class="att-name-cell att-month-hdr"></th>';
+    monthGroups.forEach(mg=>{
+      h+=`<th class="att-month-hdr" colspan="${mg.count}">${mg.label}</th>`;
+    });
+    h+='<th class="att-total-cell att-month-hdr"></th></tr>';
+    // 日付ヘッダー行
+    h+='<tr><th class="att-name-cell">氏名</th>';
+    dates.forEach(d=>{
+      const dt=new Date(d+'T00:00:00');
+      const dow=dt.getDay();
+      const dayNum=parseInt(d.slice(8,10));
+      const dowCls=dow===0?'att-sun':dow===6?'att-sat':'';
+      const todayCls=d===todayStr?'att-today':'';
+      h+=`<th class="${dowCls} ${todayCls}"><div>${dayNum}</div><div>(${dayNames[dow]})</div></th>`;
+    });
+    h+='<th class="att-total-cell">合計</th></tr></thead><tbody>';
+
+    // 従業員行
+    emps.forEach(emp=>{
+      const mgmt=emp.mgmtNo;
+      const storeIdx=STORES.indexOf(emp.store);
+      const storeCls=storeIdx>=0?STORE_CLS[storeIdx]:'';
+      h+=`<tr><td class="att-name-cell"><span style="color:${storeIdx===0?'var(--b80)':storeIdx===1?'var(--p80)':storeIdx===2?'var(--c80)':'var(--tx)'}">${emp.name}</span></td>`;
+      let totalMins=0, totalDays=0;
+      dates.forEach(d=>{
+        const dt=new Date(d+'T00:00:00');
+        const dow=dt.getDay();
+        const dowCls=dow===0?'att-sun':dow===6?'att-sat':'';
+        const todayCls=d===todayStr?'att-today':'';
+        const dayRecs=map[mgmt]&&map[mgmt][d]?map[mgmt][d]:[];
+        if(dayRecs.length===0){
+          h+=`<td class="${dowCls} ${todayCls}"></td>`;
+        } else {
+          totalDays++;
+          let cellH='';
+          dayRecs.forEach(r=>{
+            const inDisp=r.in?r.in.slice(0,5):'';
+            const outDisp=r.out?r.out.slice(0,5):'';
+            if(r.minutes!=null) totalMins+=Number(r.minutes);
+            cellH+=`<div class="att-in">${inDisp}</div><div class="att-out">${outDisp||'<span style="color:var(--g60);font-size:9px">出勤中</span>'}</div>`;
+          });
+          h+=`<td class="${dowCls} ${todayCls}">${cellH}</td>`;
+        }
+      });
+      const totalH=Math.floor(totalMins/60);
+      const totalM=totalMins%60;
+      const totalDisp=totalMins>0?`${totalH}.${String(Math.round(totalM/60*100)).padStart(2,'0')}`:'';
+      const daysDisp=totalDays>0?`${totalDays}日`:'';
+      h+=`<td class="att-total-cell"><div style="font-size:11px">${totalDisp}</div><div style="font-size:10px;color:var(--mu)">${daysDisp}</div></td></tr>`;
+    });
+
+    h+='</tbody></table>';
+    if(emps.length===0) h='<div class="empty">該当する従業員がいません</div>';
+    body.innerHTML=h;
+  }catch(e){
+    body.innerHTML='<div class="empty">取得失敗: '+e.message+'</div>';
+  }finally{ hideLoading(); }
+}
+
 // ---- Init ----
 loadRoundSettings();
 initStore();
@@ -1734,7 +1932,7 @@ setInterval(async () => {
   try{
     const d = await api('getOpenRecords',{store:STORES[curStore]});
     openRecs = {};
-    (d.openRecords||[]).forEach(r=>{openRecs[r.mgmtNo]={id:r.id, kubun:r.kubun, inTime:r.inTime, roundedIn:r.roundedIn, store:r.store||''};});
+    (d.openRecords||[]).forEach(r=>{openRecs[r.mgmtNo]={id:r.id, kubun:r.kubun, inTime:r.inTime, store:r.store||''};});
     renderEmpGrid();
     loadAttendPanel();
   }catch(e){}
