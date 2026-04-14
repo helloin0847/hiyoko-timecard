@@ -671,10 +671,15 @@ let editId    = '';
 let roundSettings = { inUnit: 0, inMethod: 'none', outUnit: 0, outMethod: 'none' };
 let showRounded = true; // true=丸め時間表示, false=打刻時間表示
 
-function loadRoundSettings() {
+async function loadRoundSettings() {
   try {
-    const s = localStorage.getItem('hiyoko_round');
-    if (s) roundSettings = Object.assign(roundSettings, JSON.parse(s));
+    const {data,error} = await sb.from('round_settings').select('*').eq('id',1).single();
+    if(!error && data) {
+      roundSettings = {
+        inUnit: data.in_unit||0, inMethod: data.in_method||'none',
+        outUnit: data.out_unit||0, outMethod: data.out_method||'none',
+      };
+    }
   } catch(e) {}
   applyRoundSettingsToUI();
 }
@@ -711,15 +716,21 @@ function toggleRounding() {
   sw(curTab);
 }
 
-function saveRoundSettings() {
+async function saveRoundSettings() {
   roundSettings = {
     inUnit:    parseInt(document.getElementById('rInUnit').value)   || 0,
     inMethod:  document.getElementById('rInMethod').value,
     outUnit:   parseInt(document.getElementById('rOutUnit').value)  || 0,
     outMethod: document.getElementById('rOutMethod').value,
   };
-  localStorage.setItem('hiyoko_round', JSON.stringify(roundSettings));
-  toast('丸め設定を保存しました');
+  try {
+    const {error} = await sb.from('round_settings').upsert({
+      id:1, in_unit:roundSettings.inUnit, in_method:roundSettings.inMethod,
+      out_unit:roundSettings.outUnit, out_method:roundSettings.outMethod, updated_at:new Date().toISOString(),
+    });
+    if(error) throw new Error(error.message);
+    toast('丸め設定を保存しました');
+  } catch(e) { toast('保存失敗: '+e.message, 'err'); }
 }
 
 // ---- Clock ----

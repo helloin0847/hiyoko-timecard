@@ -111,8 +111,8 @@ hiyoko-timecard/
 
 | キー | 保存先 | 説明 |
 |------|--------|------|
-| `hiyoko_round` | localStorage | 丸め設定（各iPadごと）|
 | `hiyoko_store` | localStorage | 最後に選択した店舗 |
+| 丸め設定 | Supabase (`round_settings`テーブル) | 全端末共通・一度設定すれば全デバイスに反映 |
 
 ## URLパラメータ
 
