@@ -916,6 +916,7 @@ async function api(action, body={}) {
     const newIn = body.in || cur.clock_in_raw;
     const newOut = body.out || cur.clock_out_raw;
     const upd = { is_corrected:true, correction_memo:body.memo||'修正' };
+    if(body.date) upd.date = body.date;
     if(body.in) upd.clock_in_raw = body.in;
     if(body.out) {
       upd.clock_out_raw = body.out;
@@ -1568,7 +1569,7 @@ async function loadLog(){
         <td class="td-time">${r.in || '--'}</td>
         <td class="td-time">${r.out ? r.out : '<span class="badge b-open">出勤中</span>'}</td>
         <td class="td-time">${mins!=null ? fmtMin(mins) : '-'} ${fix}</td>
-        <td><button class="icon-btn" style="font-size:12px;padding:8px 14px" onclick="openEdit('${r.id}','${r.empName}','${r.in}','${r.out||''}')">修正</button></td>
+        <td><button class="icon-btn" style="font-size:12px;padding:8px 14px" onclick="openEdit('${r.id}','${r.empName}','${r.date}','${r.in}','${r.out||''}')">修正</button></td>
       </tr>`;
     });
     document.getElementById('logBody').innerHTML=h+'</tbody></table></div>';
@@ -1603,10 +1604,11 @@ function filterLogList(){
   });
 }
 
-function openEdit(id,name,inT,outT){
+function openEdit(id,name,dateT,inT,outT){
   editId=id;
   document.getElementById('editBody').innerHTML=`
     <p style="font-size:13px;color:var(--mu);margin-bottom:8px"><strong>${name}</strong> の打刻を修正</p>
+    <label>日付</label><input type="date" id="eDate" value="${dateT||''}"/>
     <label>出勤時刻（実打刻）</label><input type="time" id="eIn" value="${inT||''}" step="60"/>
     <label>退勤時刻（実打刻）</label><input type="time" id="eOut" value="${outT||''}" step="60"/>
     <label>修正メモ</label><input type="text" id="eMemo" placeholder="修正理由（任意）"/>
@@ -1615,6 +1617,7 @@ function openEdit(id,name,inT,outT){
 }
 
 async function submitEdit(){
+  const dateV = document.getElementById('eDate').value;
   const inV  = document.getElementById('eIn').value;
   const outV = document.getElementById('eOut').value;
   const memo = document.getElementById('eMemo').value;
@@ -1622,6 +1625,7 @@ async function submitEdit(){
   try{
     await api('updateRecord', {
       id: editId,
+      date: dateV || undefined,
       in:  inV  || undefined,
       out: outV || undefined,
       memo,
