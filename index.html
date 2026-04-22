@@ -917,6 +917,10 @@ async function api(action, body={}) {
     const newOut = body.out || cur.clock_out_raw;
     const upd = { is_corrected:true, correction_memo:body.memo||'修正' };
     if(body.date) upd.date = body.date;
+    if(body.kubun){
+      if(!['仕込','営業','通し'].includes(body.kubun)) throw new Error('無効な区分です');
+      upd.kubun = body.kubun;
+    }
     if(body.in) upd.clock_in_raw = body.in;
     if(body.out) {
       upd.clock_out_raw = body.out;
@@ -1569,7 +1573,7 @@ async function loadLog(){
         <td class="td-time">${r.in || '--'}</td>
         <td class="td-time">${r.out ? r.out : '<span class="badge b-open">出勤中</span>'}</td>
         <td class="td-time">${mins!=null ? fmtMin(mins) : '-'} ${fix}</td>
-        <td><button class="icon-btn" style="font-size:12px;padding:8px 14px" onclick="openEdit('${r.id}','${r.empName}','${r.date}','${r.in}','${r.out||''}')">修正</button></td>
+        <td><button class="icon-btn" style="font-size:12px;padding:8px 14px" onclick="openEdit('${r.id}','${r.empName}','${r.date}','${r.in}','${r.out||''}','${r.kubun}')">修正</button></td>
       </tr>`;
     });
     document.getElementById('logBody').innerHTML=h+'</tbody></table></div>';
@@ -1604,11 +1608,18 @@ function filterLogList(){
   });
 }
 
-function openEdit(id,name,dateT,inT,outT){
+function openEdit(id,name,dateT,inT,outT,kubunT){
   editId=id;
+  const k = kubunT || '営業';
   document.getElementById('editBody').innerHTML=`
     <p style="font-size:13px;color:var(--mu);margin-bottom:8px"><strong>${name}</strong> の打刻を修正</p>
     <label>日付</label><input type="date" id="eDate" value="${dateT||''}"/>
+    <label>区分</label>
+    <select id="eKubun">
+      <option value="仕込" ${k==='仕込'?'selected':''}>仕込</option>
+      <option value="営業" ${k==='営業'?'selected':''}>営業</option>
+      <option value="通し" ${k==='通し'?'selected':''}>通し</option>
+    </select>
     <label>出勤時刻（実打刻）</label><input type="time" id="eIn" value="${inT||''}" step="60"/>
     <label>退勤時刻（実打刻）</label><input type="time" id="eOut" value="${outT||''}" step="60"/>
     <label>修正メモ</label><input type="text" id="eMemo" placeholder="修正理由（任意）"/>
@@ -1617,15 +1628,17 @@ function openEdit(id,name,dateT,inT,outT){
 }
 
 async function submitEdit(){
-  const dateV = document.getElementById('eDate').value;
-  const inV  = document.getElementById('eIn').value;
-  const outV = document.getElementById('eOut').value;
-  const memo = document.getElementById('eMemo').value;
+  const dateV  = document.getElementById('eDate').value;
+  const kubunV = document.getElementById('eKubun').value;
+  const inV    = document.getElementById('eIn').value;
+  const outV   = document.getElementById('eOut').value;
+  const memo   = document.getElementById('eMemo').value;
   showLoading();
   try{
     await api('updateRecord', {
       id: editId,
       date: dateV || undefined,
+      kubun: kubunV || undefined,
       in:  inV  || undefined,
       out: outV || undefined,
       memo,
