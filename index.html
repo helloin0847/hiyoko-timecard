@@ -470,6 +470,22 @@ td.td-time{white-space:nowrap;}
   <div id="view-history" style="display:none">
     <div class="card">
       <div class="filter-row">
+        <select id="histStore" onchange="refillHistEmp()" title="店舗で絞り込み">
+          <option value="">全店舗</option>
+          <option value="本店">本店</option>
+          <option value="east">east</option>
+          <option value="ASAHI">ASAHI</option>
+        </select>
+        <select id="histStatus" onchange="refillHistEmp()" title="在籍状況で絞り込み">
+          <option value="active">在籍中</option>
+          <option value="retired">退職</option>
+          <option value="all">全て</option>
+        </select>
+        <select id="histEmpType" onchange="refillHistEmp()" title="雇用形態で絞り込み">
+          <option value="">全雇用形態</option>
+          <option value="正社員">正社員</option>
+          <option value="アルバイト">アルバイト</option>
+        </select>
         <label style="font-size:12px;color:var(--mu)">スタッフ</label>
         <select id="histEmp" onchange="loadHistory()" style="flex:1;min-width:120px"></select>
         <label style="font-size:12px;color:var(--mu)">開始</label>
@@ -1684,18 +1700,46 @@ async function dlCsv(){
 }
 
 // ---- 個人勤務履歴 ----
-function initHistoryTab(){
+// 店舗・在籍状況・雇用形態でスタッフ候補を絞り込む
+function histFilteredEmployees(){
+  const store   = document.getElementById('histStore').value;
+  const status  = document.getElementById('histStatus').value; // active/retired/all
+  const empType = document.getElementById('histEmpType').value;
+  const t = today();
+  return allEmployees.filter(e=>{
+    if(store && e.store!==store) return false;
+    const retired = e.retireDate && e.retireDate<=t;
+    if(status==='active'  && retired)  return false;
+    if(status==='retired' && !retired) return false;
+    if(empType && (e.empType||'アルバイト')!==empType) return false;
+    return true;
+  });
+}
+
+// 絞り込み結果でスタッフ選択肢を再構築（現在の選択は可能なら維持）
+function buildHistEmpOptions(){
   const sel=document.getElementById('histEmp');
   const curVal=sel.value;
+  const list=histFilteredEmployees();
   sel.innerHTML='<option value="">スタッフを選択</option>';
-  allEmployees.forEach(e=>{
+  list.forEach(e=>{
     const retired=e.retireDate&&e.retireDate<=today();
     const label=e.name+(retired?' (退職)':'');
     sel.innerHTML+=`<option value="${e.mgmtNo}">${label}</option>`;
   });
-  if(curVal) sel.value=curVal;
+  if(curVal && list.some(e=>String(e.mgmtNo)===String(curVal))) sel.value=curVal;
+}
+
+// 絞り込み条件が変わったとき：選択肢を作り直して履歴を再表示
+function refillHistEmp(){
+  buildHistEmpOptions();
+  loadHistory();
+}
+
+function initHistoryTab(){
+  buildHistEmpOptions();
   if(!document.getElementById('histFrom').value) setHistThisPeriod();
-  if(sel.value) loadHistory();
+  if(document.getElementById('histEmp').value) loadHistory();
 }
 
 function setHistThisPeriod(){
