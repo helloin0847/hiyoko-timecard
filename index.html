@@ -933,6 +933,10 @@ async function api(action, body={}) {
     const newOut = body.out || cur.clock_out_raw;
     const upd = { is_corrected:true, correction_memo:body.memo||'修正' };
     if(body.date) upd.date = body.date;
+    if(body.store){
+      if(!['本店','east','ASAHI'].includes(body.store)) throw new Error('無効な店舗です');
+      upd.store = body.store;
+    }
     if(body.kubun){
       if(!['仕込','営業','通し'].includes(body.kubun)) throw new Error('無効な区分です');
       upd.kubun = body.kubun;
@@ -1589,7 +1593,7 @@ async function loadLog(){
         <td class="td-time">${r.in || '--'}</td>
         <td class="td-time">${r.out ? r.out : '<span class="badge b-open">出勤中</span>'}</td>
         <td class="td-time">${mins!=null ? fmtMin(mins) : '-'} ${fix}</td>
-        <td><button class="icon-btn" style="font-size:12px;padding:8px 14px" onclick="openEdit('${r.id}','${r.empName}','${r.date}','${r.in}','${r.out||''}','${r.kubun}')">修正</button></td>
+        <td><button class="icon-btn" style="font-size:12px;padding:8px 14px" onclick="openEdit('${r.id}','${r.empName}','${r.date}','${r.in}','${r.out||''}','${r.kubun}','${r.store}')">修正</button></td>
       </tr>`;
     });
     document.getElementById('logBody').innerHTML=h+'</tbody></table></div>';
@@ -1624,12 +1628,17 @@ function filterLogList(){
   });
 }
 
-function openEdit(id,name,dateT,inT,outT,kubunT){
+function openEdit(id,name,dateT,inT,outT,kubunT,storeT){
   editId=id;
   const k = kubunT || '営業';
+  const st = storeT || '本店';
   document.getElementById('editBody').innerHTML=`
     <p style="font-size:13px;color:var(--mu);margin-bottom:8px"><strong>${name}</strong> の打刻を修正</p>
     <label>日付</label><input type="date" id="eDate" value="${dateT||''}"/>
+    <label>店舗</label>
+    <select id="eStore">
+      ${STORES.map(s=>`<option value="${s}" ${st===s?'selected':''}>${s}</option>`).join('')}
+    </select>
     <label>区分</label>
     <select id="eKubun">
       <option value="仕込" ${k==='仕込'?'selected':''}>仕込</option>
@@ -1645,6 +1654,7 @@ function openEdit(id,name,dateT,inT,outT,kubunT){
 
 async function submitEdit(){
   const dateV  = document.getElementById('eDate').value;
+  const storeV = document.getElementById('eStore').value;
   const kubunV = document.getElementById('eKubun').value;
   const inV    = document.getElementById('eIn').value;
   const outV   = document.getElementById('eOut').value;
@@ -1654,6 +1664,7 @@ async function submitEdit(){
     await api('updateRecord', {
       id: editId,
       date: dateV || undefined,
+      store: storeV || undefined,
       kubun: kubunV || undefined,
       in:  inV  || undefined,
       out: outV || undefined,
