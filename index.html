@@ -549,6 +549,12 @@ td.td-time{white-space:nowrap;}
       <div class="card-lbl">従業員マスタ（全店舗共通）</div>
       <div style="margin-bottom:10px;display:flex;gap:7px;align-items:center">
         <input type="text" id="masterSearch" placeholder="氏名で検索..." oninput="filterMasterList()" style="font-size:13px;padding:7px 12px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);width:200px;"/>
+        <select id="masterStore" onchange="filterMasterList()" title="店舗で絞り込み" style="font-size:13px;padding:7px 12px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);">
+          <option value="">全店舗</option>
+          <option value="本店">本店</option>
+          <option value="east">east</option>
+          <option value="ASAHI">ASAHI</option>
+        </select>
         <select id="masterStatus" onchange="filterMasterList()" title="在籍状況で絞り込み" style="font-size:13px;padding:7px 12px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);">
           <option value="active">在籍中</option>
           <option value="retired">退職</option>
@@ -1880,6 +1886,7 @@ function renderEmpList(){
 // 表示のdisplay切替のみでempRowsは全件保持する（saveEmpsが「画面から消えた行=削除」とみなすため絞り込み厳禁）
 function filterMasterList(){
   const q = (document.getElementById('masterSearch').value||'').trim().toLowerCase();
+  const store = document.getElementById('masterStore').value;
   const status = document.getElementById('masterStatus').value; // active/retired/all
   const t = today();
   const rows = document.getElementById('empMgrList').children;
@@ -1888,6 +1895,7 @@ function filterMasterList(){
     const name = (e.name||'').toLowerCase();
     const retired = e.retireDate && e.retireDate<=t;
     let show = !q || name.includes(q);
+    if(store && e.store!==store) show=false;
     if(status==='active'  && retired)  show=false;
     if(status==='retired' && !retired) show=false;
     rows[i].style.display = show ? '' : 'none';
@@ -1898,8 +1906,9 @@ function addEmpRow(){
   const nums=empRows.map(e=>parseInt(e.mgmtNo)).filter(n=>!isNaN(n)&&n>=1001);
   const next=nums.length>0?Math.max(...nums)+1:1001;
   empRows.push({mgmtNo:String(next),name:'',kana:'',empNo:'',store:STORES[curStore]||'',empType:'アルバイト'});
-  // 検索・在籍フィルタで新規行が隠れないようリセット
+  // 検索・店舗・在籍フィルタで新規行が隠れないようリセット
   document.getElementById('masterSearch').value='';
+  document.getElementById('masterStore').value='';
   document.getElementById('masterStatus').value='all';
   renderEmpList();
 }
