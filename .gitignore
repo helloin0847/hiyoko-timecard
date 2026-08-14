@@ -1,5 +1,6 @@
 # Claude Code
-.claude/
+.claude/*
+!.claude/launch.json
 
 # OS
 .DS_Store
