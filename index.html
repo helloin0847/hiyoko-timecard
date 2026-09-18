@@ -181,7 +181,7 @@ td.td-time{white-space:nowrap;}
 .mgmt-no-badge{font-size:11px;color:var(--hi);background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace;flex-shrink:0;min-width:44px;text-align:center;}
 .emp-mgr-row .nm{flex:1;font-size:13px;padding:5px 8px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
 .emp-mgr-row .kana-inp{width:90px;flex:none;font-size:12px;padding:5px 7px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
-.emp-mgr-row .empno-inp{width:70px;flex:none;font-size:12px;padding:5px 7px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);font-variant-numeric:tabular-nums;}
+.emp-mgr-row .empno-inp{width:80px;flex:none;font-size:12px;padding:5px 7px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);font-variant-numeric:tabular-nums;}
 .emp-mgr-row .store-sel{width:80px;flex:none;font-size:12px;padding:5px 7px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
 .emp-mgr-row .emptype-sel{width:80px;flex:none;font-size:12px;padding:5px 7px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
 .emp-mgr-row .date-inp{width:120px;flex:none;font-size:11px;padding:5px 5px;border-radius:var(--rad-s);border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx);font-family:var(--font);}
@@ -565,7 +565,7 @@ td.td-time{white-space:nowrap;}
         <span style="min-width:44px">管理番号</span>
         <span style="flex:1">氏名</span>
         <span style="width:90px">読み仮名</span>
-        <span style="width:70px">社員番号</span>
+        <span style="width:80px">従業員コード</span>
         <span style="width:80px">店舗</span>
         <span style="width:80px">雇用形態</span>
         <span style="width:120px">入社日</span>
@@ -579,7 +579,7 @@ td.td-time{white-space:nowrap;}
       </div>
       <div class="note" style="margin-top:8px">
         <strong>管理番号：</strong>自動採番（1001〜）／Sheets直接入力は0001〜1000を使用<br>
-        <strong>社員番号：</strong>FileMaker・PCAと同じ本部管理番号<br>
+        <strong>従業員コード：</strong>従業員マスタ（社内ポータル）で付く7桁の番号。FileMaker・PCA の社員番号と同じ<br>
         <strong>読み仮名：</strong>苗字のひらがな（あいうえお順タブに使用）
       </div>
     </div>
@@ -1866,7 +1866,7 @@ function renderEmpList(){
       <span class="mgmt-no-badge">${e.mgmtNo||'--'}</span>
       <input class="nm"        type="text" value="${e.name||''}"   placeholder="氏名"    onchange="empRows[${i}].name=this.value"/>
       <input class="kana-inp"  type="text" value="${e.kana||''}"   placeholder="よみ"    onchange="empRows[${i}].kana=this.value"/>
-      <input class="empno-inp" type="text" value="${e.empNo||''}"  placeholder="社員番号" onchange="empRows[${i}].empNo=this.value"/>
+      <input class="empno-inp" type="text" inputmode="numeric" value="${e.empNo||''}"  placeholder="従業員コード" onchange="empRows[${i}].empNo=this.value.trim()"/>
       <select class="store-sel" onchange="empRows[${i}].store=this.value">
         <option value="">店舗</option>${storeOpts}
       </select>
