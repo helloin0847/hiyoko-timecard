@@ -1912,7 +1912,17 @@ function addEmpRow(){
   document.getElementById('masterStatus').value='all';
   renderEmpList();
 }
-function delEmpRow(i){
+async function delEmpRow(i){
+  // 勤怠記録（論理削除分も含む）がある人は削除不可。退職日で管理する
+  const mno = empRows[i].mgmtNo;
+  if(mno){
+    const {data:refs,error} = await sb.from('time_records').select('id').eq('mgmt_no',mno).limit(1);
+    if(error){ toast('勤怠記録の確認に失敗しました: '+error.message,'err'); return; }
+    if(refs && refs.length){
+      alert(empRows[i].name+' さんは勤怠記録があるため削除できません。\n辞めた場合は退職日を入力して保存してください。');
+      return;
+    }
+  }
   const pw = prompt(empRows[i].name+'を削除します。パスワードを入力してください：');
   if(pw===null) return;
   if(pw!=='hiyoko'){ toast('パスワードが違います','err'); return; }
