@@ -70,7 +70,8 @@ button{font-family:var(--font);cursor:pointer;}
 .app{max-width:1000px;margin:0 auto;padding:0 14px 60px;}
 
 .header{display:flex;align-items:center;gap:10px;padding:12px 0 10px;border-bottom:0.5px solid var(--bd);margin-bottom:12px;}
-.hdr-logo{width:34px;height:34px;border-radius:50%;background:#FAC775;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.hdr-logo{width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hdr-logo img{display:block;width:100%;height:100%;object-fit:contain;}
 .hdr-title{font-size:15px;font-weight:700;}
 .hdr-store{font-size:11px;font-weight:600;padding:2px 9px;border-radius:100px;margin-top:2px;display:inline-block;}
 .s0{background:var(--b50);color:var(--b80);}
@@ -336,7 +337,7 @@ td.td-time{white-space:nowrap;}
 <div id="mainScreen">
 <div class="app">
   <div class="header">
-    <div class="hdr-logo"><svg viewBox="0 0 40 40" width="24" height="24"><circle fill="#E8C44A" cx="20" cy="22" r="13"/><circle fill="#E8C44A" cx="20" cy="11" r="9"/><polygon fill="#E07830" points="29,11 35,13 29,15"/><circle fill="#3D2E23" cx="22" cy="10" r="2"/></svg></div>
+    <div class="hdr-logo"><img src="https://cenigdvpcxphljrravnb.supabase.co/storage/v1/object/public/hiyoko-app/assets/hiyoko-logo.png" alt="ひよこちゃん" width="34" height="34"></div>
     <div>
       <div class="hdr-title">kitchen ひよこ</div>
       <span class="hdr-store" id="hdrStore"></span>
